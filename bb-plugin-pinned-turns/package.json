@@ -1,0 +1,42 @@
+{
+  "name": "bb-plugin-pinned-turns",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "bb": ">=0.47",
+    "bbPluginSdk": ">=0.6.75"
+  },
+  "scripts": {
+    "build": "bb plugin build",
+    "dev": "bb plugin dev",
+    "check": "tsc --noEmit",
+    "test": "node --test src/model.test.ts"
+  },
+  "bb": {
+    "name": "Pinned Turns",
+    "description": "Pins the user message you are reading under and the latest agent reply to the top of a thread; click either half to jump to it.",
+    "branding": {
+      "icon": "Pin"
+    },
+    "server": "./server.ts",
+    "app": "./app.tsx",
+    "skills": [
+      "skills"
+    ]
+  },
+  "dependencies": {
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@get-bb/plugin-sdk": "0.6.75",
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "better-sqlite3": "^12.0.0",
+    "cron-parser": "^5.5.0",
+    "hono": "^4.11.9",
+    "typescript": "^5.7.0"
+  }
+}

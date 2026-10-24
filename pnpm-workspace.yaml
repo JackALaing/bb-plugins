@@ -1,0 +1,6 @@
+packages:
+  - "bb-plugin-*"
+allowBuilds:
+  better-sqlite3: false
+minimumReleaseAgeExclude:
+  - '@get-bb/plugin-sdk@0.6.75'
