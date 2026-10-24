@@ -198,8 +198,13 @@ export function PinnedTurns({ threadId }: { threadId: string }) {
 
 /** BB's message bubble ink, made opaque: `--surface-recessed` is translucent and lets the text beneath through. */
 const MESSAGE_INK = "var(--surface-recessed-solid)";
-/** One step darker than the bubble, in whatever theme the vars resolve to. */
-const REPLY_INK = "color-mix(in oklab, var(--foreground) 10%, var(--background))";
+/**
+ * The reply is the darker of the two, in either theme. In the light theme that is
+ * more foreground mixed into the background than the bubble has; in the dark theme
+ * it is less, so it sits between the chat background and the bubble.
+ */
+const REPLY_INK =
+  "light-dark(color-mix(in oklab, var(--foreground) 10%, var(--background)), color-mix(in oklab, var(--foreground) 3%, var(--background)))";
 
 /**
  * One half of the bar. It holds its slot when it has nothing to say, fading out
