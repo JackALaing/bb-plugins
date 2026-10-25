@@ -5,7 +5,7 @@ import type { SettingKey } from "../server";
 export const DEFAULTS: Record<SettingKey, boolean> = {
   enabled: true,
   showStatus: true,
-  showPosition: false,
+  showPosition: true,
   showFullText: true,
   debugLog: true,
 };

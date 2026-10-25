@@ -35,7 +35,7 @@ export default async function plugin(bb: BbPluginApi) {
       type: "boolean",
       label: "Show message position",
       description: "Where the pinned message sits among the thread's messages, like 7/23. Loads the whole thread.",
-      default: false,
+      default: true,
     },
     showFullText: {
       type: "boolean",

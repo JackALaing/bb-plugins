@@ -15,7 +15,7 @@ Click the pin button in the thread header, or use `bb plugin config pinned-turns
 | --- | --- | --- |
 | `enabled` | on | The bar itself. |
 | `showStatus` | on | A dot on the reply when its turn is running, failed or was interrupted. |
-| `showPosition` | off | `7/23` beside the message; fetches the whole thread. |
+| `showPosition` | on | `7/23` outside the message's right edge; fetches the whole thread. |
 | `showFullText` | on | Tooltip with the whole message when the bar cut it short. |
 | `debugLog` | on | Timing lines in the plugin log. |
 

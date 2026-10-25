@@ -238,7 +238,7 @@ export function PinnedTurns({ threadId }: { threadId: string }) {
         className="ml-auto max-w-[70%] flex-none"
         ink={MESSAGE_INK}
         tooltip={options.showFullText}
-        position={roomForPosition && total > 0 && shown.message?.ordinal ? `${shown.message.ordinal}/${total}` : undefined}
+        position={roomForPosition && total > 0 && shown.message?.ordinal ? { ordinal: shown.message.ordinal, total } : undefined}
       />
     </div>,
     host,
@@ -282,8 +282,8 @@ function Half({
   status?: boolean;
   /** Offer the full text on hover when the bar cut it short. */
   tooltip: boolean;
-  /** "7/23", drawn small after the text. */
-  position?: string;
+  /** Where this message sits among the thread's, drawn outside the half's right edge. */
+  position?: { ordinal: number; total: number };
   onJump: (message: Message) => void;
 }) {
   const last = useRef<Message | null>(null);
@@ -332,12 +332,16 @@ function Half({
       </button>
       {/* Hangs off the right edge so it never takes width from the message (see POSITION_ROOM). */}
       {position ? (
+        // The same size and line height as the message's text, with the smaller figures
+        // inside it, so the two share a baseline.
         <span
           aria-hidden
-          className="pointer-events-none absolute whitespace-nowrap text-xs tabular-nums leading-[23px] text-muted-foreground"
-          style={{ left: "100%", marginLeft: 6, top: 5 }}
+          className="pointer-events-none absolute whitespace-nowrap text-sm leading-relaxed tabular-nums text-foreground opacity-75"
+          style={{ left: "100%", marginLeft: 6, top: 6 }}
         >
-          {position}
+          <span style={{ fontSize: "90%" }}>
+            <span className="font-semibold">{position.ordinal}</span>/{position.total}
+          </span>
         </span>
       ) : null}
     </div>
