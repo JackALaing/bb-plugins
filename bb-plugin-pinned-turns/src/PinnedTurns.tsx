@@ -336,8 +336,8 @@ function Half({
         // inside it, so the two share a baseline.
         <span
           aria-hidden
-          className="pointer-events-none absolute whitespace-nowrap text-sm leading-relaxed tabular-nums text-foreground opacity-33"
-          style={{ left: "100%", marginLeft: 6, top: 6 }}
+          className="pointer-events-none absolute whitespace-nowrap text-sm leading-relaxed tabular-nums text-foreground"
+          style={{ left: "100%", marginLeft: 6, top: 6, opacity: 0.33 }}
         >
           <span style={{ fontSize: "90%" }}>
             <span className="font-semibold">{position.ordinal}</span>/{position.total}
