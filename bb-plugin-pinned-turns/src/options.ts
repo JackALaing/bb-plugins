@@ -7,7 +7,7 @@ export const DEFAULTS: Record<SettingKey, boolean> = {
   showStatus: true,
   showPosition: true,
   showFullText: true,
-  debugLog: true,
+  debugLog: false,
   showPinButton: true,
 };
 

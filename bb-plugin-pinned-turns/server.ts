@@ -53,7 +53,7 @@ export default async function plugin(bb: BbPluginApi) {
       type: "boolean",
       label: "Debug log",
       description: "Write timeline fetch timing to the plugin log (`bb plugin logs pinned-turns`).",
-      default: true,
+      default: false,
     },
   });
   bb.rpc.register(rpcContract, {
