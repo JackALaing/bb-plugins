@@ -4,6 +4,7 @@ import { experimental_Icon as Icon, experimental_usePluginId as usePluginId, use
 import type { SettingKey, rpcContract } from "../server";
 import { useOptions } from "./options";
 import { usePortalScopeProps } from "./portal-scope";
+import { useCanHover, useCounterRoom } from "./viewport";
 
 const ITEMS: { key: SettingKey; label: string; hint?: string }[] = [
   { key: "showStatus", label: "Turn status", hint: "Pulse a running turn; mark a reply that failed or was interrupted" },
@@ -50,6 +51,10 @@ export function HeaderMenu() {
   };
   const on = value("enabled");
   const scope = usePortalScopeProps();
+  // Options that cannot do anything here are greyed out, with the reason in place of the hint.
+  const unavailable: Partial<Record<SettingKey, string>> = {};
+  if (!useCounterRoom()) unavailable.showPosition = "Not shown when the thread is this narrow";
+  if (!useCanHover()) unavailable.showFullText = "Needs a pointer that can hover";
 
   // Hidden for good until the setting is switched back on in the plugin's settings.
   if (!saved.ready || !saved.showPinButton) return null;
@@ -78,7 +83,14 @@ export function HeaderMenu() {
           <Row checked={on} onChange={(next) => set("enabled", next)} label="Pin the current turn" />
           <Menu.Separator className="my-1 h-px bg-border-seam" />
           {ITEMS.map(({ key, label, hint }) => (
-            <Row key={key} checked={value(key)} onChange={(next) => set(key, next)} label={label} hint={hint} disabled={!on} />
+            <Row
+              key={key}
+              checked={value(key)}
+              onChange={(next) => set(key, next)}
+              label={label}
+              hint={unavailable[key] ?? hint}
+              disabled={!on || key in unavailable}
+            />
           ))}
           <Menu.Separator className="my-1 h-px bg-border-seam" />
           <Row checked={value("debugLog")} onChange={(next) => set("debugLog", next)} label="Debug log" hint="bb plugin logs pinned-turns" />

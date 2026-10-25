@@ -15,3 +15,5 @@ Click the pin button in the thread header for the menu:
 Each is also a plugin setting.
 
 It reads BB's timeline DOM, which is undocumented; the selectors it relies on are in `src/dom.ts` and the repo's `AGENTS.md`.
+
+On a narrow thread view or a touch-only device, options that cannot apply (the turn counter, full text on hover) are greyed out in the menu.

@@ -6,6 +6,7 @@ import { findTimeline, mountedRows, prefersReducedMotion, rankOfRow, rowById, ty
 import { PIN_ROW_HEIGHT, bandAt, jumpOffset, lastAtOrAbove, type Message, type TurnStatus } from "./model";
 import { useOptions } from "./options";
 import { useTimeline, type Debug, type TimelineIndex } from "./timeline";
+import { COUNTER_ROOM, setCounterRoom, useCounterRoom } from "./viewport";
 
 /**
  * Where a jump leaves a row, as an offset from the scroller's top. The bar's
@@ -20,11 +21,6 @@ const RADIUS = 12;
  * vertical middle of the right edge, not at the top, so it does not meet the bar.
  */
 const SIDE_ROOM = 16;
-/**
- * The position counter hangs outside the bar's right edge. Below this scroller width
- * the bar fills the column and the counter would be clipped, so it is left out.
- */
-const POSITION_ROOM = 840;
 
 interface Shown {
   message: Message | null;
@@ -46,7 +42,7 @@ const nextFrame = () => new Promise<void>((resolve) => requestAnimationFrame(() 
 export function PinnedTurns({ threadId }: { threadId: string }) {
   const [host, setHost] = useState<HTMLElement | null>(null);
   const [shown, setShown] = useState<Shown>(NONE);
-  const [roomForPosition, setRoomForPosition] = useState(true);
+  const roomForCounter = useCounterRoom();
   const options = useOptions();
   const rpc = useRpc<typeof rpcContract>();
   // The server drops these unless the debug log is on; skipping the call here saves the round trip.
@@ -98,10 +94,11 @@ export function PinnedTurns({ threadId }: { threadId: string }) {
     schedule();
   }, [index, schedule]);
 
-  // "7/23" needs every message, so while it is on the older pages are fetched in turn.
+  // "7/23" needs every message, so while it is shown the older pages are fetched in turn.
+  const counter = options.showPosition && roomForCounter;
   useEffect(() => {
-    if (options.showPosition && index.hasOlder) loadOlder();
-  }, [options.showPosition, index, loadOlder]);
+    if (counter && index.hasOlder) loadOlder();
+  }, [counter, index, loadOlder]);
 
   // Park the row in the scroller and keep it parked. The scroller can be rebuilt
   // under a thread (a layout change), so a cheap check re-attaches when it is gone.
@@ -131,7 +128,7 @@ export function PinnedTurns({ threadId }: { threadId: string }) {
       found.frame.insertBefore(element, found.frame.firstChild);
       found.scroller.addEventListener("scroll", schedule, { passive: true });
       observer = new ResizeObserver(() => {
-        setRoomForPosition(found.scroller.clientWidth >= POSITION_ROOM);
+        setCounterRoom(found.scroller.clientWidth >= COUNTER_ROOM);
         schedule();
       });
       observer.observe(found.items);
@@ -231,7 +228,7 @@ export function PinnedTurns({ threadId }: { threadId: string }) {
   };
 
   if (!host) return null;
-  const total = options.showPosition && !index.hasOlder ? index.userTotal : 0;
+  const total = counter && !index.hasOlder ? index.userTotal : 0;
   return createPortal(
     // The message is the reader's own bubble, so it sits right at its own width; the
     // reply takes every pixel it leaves. Nothing is measured to keep them apart.
@@ -248,7 +245,7 @@ export function PinnedTurns({ threadId }: { threadId: string }) {
         ink={MESSAGE_INK}
         status={options.showStatus}
         tooltip={options.showFullText}
-        position={roomForPosition && total > 0 && shown.message?.ordinal ? { ordinal: shown.message.ordinal, total } : undefined}
+        position={total > 0 && shown.message?.ordinal ? { ordinal: shown.message.ordinal, total } : undefined}
       />
     </div>,
     host,
@@ -396,7 +393,7 @@ function Half({
           {text?.title}
         </span>
       </button>
-      {/* Hangs off the right edge so it never takes width from the message (see POSITION_ROOM). */}
+      {/* Hangs off the right edge so it never takes width from the message (see COUNTER_ROOM). */}
       {position ? (
         // The same size and line height as the message's text, with the smaller figures
         // inside it, so the two share a baseline.
