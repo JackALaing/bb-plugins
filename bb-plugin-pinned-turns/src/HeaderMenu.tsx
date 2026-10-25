@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import * as Menu from "@radix-ui/react-dropdown-menu";
-import { experimental_Icon as Icon, useRpc } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon, experimental_usePluginId as usePluginId, useRpc } from "@get-bb/plugin-sdk/app";
 import type { SettingKey, rpcContract } from "../server";
 import { useOptions } from "./options";
 import { usePortalScopeProps } from "./portal-scope";
@@ -11,15 +11,12 @@ const ITEMS: { key: SettingKey; label: string; hint?: string }[] = [
   { key: "showFullText", label: "Full text on hover", hint: "When the bar cuts a message short" },
 ];
 
-/** Where this plugin's settings live in BB. */
-const SETTINGS_PATH = "/settings/plugins/pinned-turns";
-
 /**
- * Opens a BB route in place. The SDK has no call for plugin settings, so this pushes
- * the route and tells BB's router; a plain link would reload the page.
+ * Opens this plugin's page in BB's settings in place. The SDK has no call for it, so
+ * this pushes the route and tells BB's router; a plain link would reload the page.
  */
-function openSettings() {
-  history.pushState(null, "", SETTINGS_PATH);
+function openSettings(pluginId: string) {
+  history.pushState(null, "", `/settings/plugins/${pluginId}`);
   window.dispatchEvent(new PopStateEvent("popstate", { state: null }));
 }
 
@@ -31,6 +28,7 @@ function openSettings() {
 export function HeaderMenu() {
   const rpc = useRpc<typeof rpcContract>();
   const saved = useOptions();
+  const pluginId = usePluginId();
   // Shown until the saved value arrives, so a click answers at once.
   const [pending, setPending] = useState<Partial<Record<SettingKey, boolean>>>({});
   useEffect(() => {
@@ -39,7 +37,7 @@ export function HeaderMenu() {
       for (const key of Object.keys(now) as SettingKey[]) if (saved[key] === now[key]) delete next[key];
       return Object.keys(next).length === Object.keys(now).length ? now : next;
     });
-  }, [saved.enabled, saved.showStatus, saved.showPosition, saved.showFullText, saved.debugLog, saved.showPinButton]);
+  }, [saved]);
   const value = (key: SettingKey) => pending[key] ?? saved[key];
   const set = (key: SettingKey, next: boolean) => {
     setPending((now) => ({ ...now, [key]: next }));
@@ -54,7 +52,7 @@ export function HeaderMenu() {
   const scope = usePortalScopeProps();
 
   // Hidden for good until the setting is switched back on in the plugin's settings.
-  if (!saved.showPinButton) return null;
+  if (!saved.ready || !saved.showPinButton) return null;
 
   return (
     // Not modal: a modal menu hides and locks the rest of the page on open, which cost
@@ -92,7 +90,7 @@ export function HeaderMenu() {
           />
           <Menu.Separator className="my-1 h-px bg-border-seam" />
           <Menu.Item
-            onSelect={openSettings}
+            onSelect={() => openSettings(pluginId)}
             className="relative flex cursor-pointer select-none items-center gap-2 rounded-md py-1.5 pl-8 pr-3 outline-none data-[highlighted]:bg-surface-recessed"
           >
             <span className="absolute left-2.5 flex h-4 w-4 items-center justify-center">

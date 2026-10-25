@@ -15,6 +15,39 @@ export interface TimelineIndex {
   userTotal: number;
 }
 
+/** The rows of a page in order, with a turn's children flattened in after it. */
+export function flatten(rows: readonly Row[], out: Row[] = []): Row[] {
+  for (const row of rows) {
+    out.push(row);
+    if (row.kind === "turn" && row.children) flatten(row.children, out);
+  }
+  return out;
+}
+
+/**
+ * The held rows brought up to date with a refetch of the newest page. `fresh` is
+ * the page's rows; `updates` are rows older than the page that changed (a work row
+ * that finished after it scrolled out of the window). Held rows that fall inside
+ * the page's window but are not in it were rewritten (an edited message reruns) and
+ * are dropped; everything older is kept.
+ */
+export function mergeNewest(held: readonly Row[], fresh: readonly Row[], updates: readonly Row[] = []): Row[] {
+  const windowStart = fresh[0]?.sourceSeqStart ?? 0;
+  const ids = new Set(fresh.map((row) => row.id));
+  const changed = new Map(updates.map((row) => [row.id, row]));
+  const kept = held.filter((row) => row.sourceSeqStart < windowStart && !ids.has(row.id)).map((row) => changed.get(row.id) ?? row);
+  return [...kept, ...fresh];
+}
+
+/** An older page placed before the held rows; a row both hold (a page that overlaps) is kept once. */
+export function prependOlder(held: readonly Row[], older: readonly Row[]): Row[] {
+  const ids = new Set(held.map((row) => row.id));
+  return [...older.filter((row) => !ids.has(row.id)), ...held];
+}
+
+/** How much of a message's text is read to make its title; a collapsed 800 characters fits well inside. */
+const TEXT_READ = 3000;
+
 /** What a user row says when it has no text: its attachments, by name. */
 function attachmentTitle(row: Extract<Row, { kind: "conversation"; role: "user" }>): string {
   const a = row.attachments;
@@ -75,13 +108,13 @@ export function indexOf(rows: readonly Row[], hasOlder: boolean): TimelineIndex 
     else events.push("assistant");
     // Another agent's message is not the user's turn to name.
     if (row.role === "user" && row.initiator === "agent") return;
-    const full = oneLine(textOf(row), 800);
+    // Bounded first: a long message is read in full only to be cut to a line.
+    const full = oneLine(textOf(row).slice(0, TEXT_READ), 800);
     if (full === "") return;
     const message: Message = {
       id: row.id,
       role: row.role,
       rank: i,
-      seq: row.messageSeq,
       title: full.slice(0, 240),
       full,
       by: row.role === "user" && row.initiator === "system" ? "system" : "user",

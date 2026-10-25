@@ -28,7 +28,7 @@ export default async function plugin(bb: BbPluginApi) {
     showStatus: {
       type: "boolean",
       label: "Show turn status",
-      description: "A dot on the reply when its turn is running, failed or was interrupted.",
+      description: "Your message and the reply pulse while the turn runs; a dot marks a reply that failed or was interrupted.",
       default: true,
     },
     showPosition: {

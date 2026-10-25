@@ -1,4 +1,4 @@
-import { dataIdOf } from "./model";
+import { dataIdOf } from "./model.ts";
 
 /** BB's timeline DOM, as found in bb-app 0.47.0. Undocumented: see AGENTS.md. */
 export interface Timeline {
@@ -11,7 +11,7 @@ export interface Timeline {
 
 /** The scroller showing `threadId`, or null while it has not mounted. */
 export function findTimeline(threadId: string): Timeline | null {
-  const row = document.querySelector(`[data-timeline-row-id^="${threadId}:"]`);
+  const row = document.querySelector(`[data-timeline-row-id^="${CSS.escape(threadId)}:"]`);
   const scroller = row?.closest<HTMLElement>("[data-page-scroll-viewport]");
   const items = scroller?.querySelector<HTMLElement>("[data-timeline-items]");
   const frame = scroller?.firstElementChild;

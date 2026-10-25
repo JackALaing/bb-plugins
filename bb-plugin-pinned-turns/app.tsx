@@ -10,8 +10,9 @@ import { PinnedTurns } from "./src/PinnedTurns";
 
 function Overlay() {
   const { threadId } = useBbContext();
-  const { enabled } = useOptions();
-  if (threadId === null || !enabled) return null;
+  const { ready, enabled } = useOptions();
+  // Not before the saved settings are known: a bar switched off would otherwise flash on every thread.
+  if (threadId === null || !ready || !enabled) return null;
   return <PinnedTurns key={threadId} threadId={threadId} />;
 }
 

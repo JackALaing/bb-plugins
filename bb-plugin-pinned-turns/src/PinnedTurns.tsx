@@ -33,7 +33,7 @@ interface Shown {
 const NONE: Shown = { message: null, reply: null };
 
 const sameMessage = (a: Message | null, b: Message | null) =>
-  a?.id === b?.id && a?.title === b?.title && a?.status === b?.status && a?.ordinal === b?.ordinal;
+  a === b || (a?.id === b?.id && a?.title === b?.title && a?.full === b?.full && a?.status === b?.status && a?.ordinal === b?.ordinal);
 
 const nextFrame = () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 
@@ -160,13 +160,13 @@ export function PinnedTurns({ threadId }: { threadId: string }) {
    * measured heights replace estimates, so the row ends up somewhere else and the
    * page visibly corrects itself afterwards. Instead each frame closes a share of
    * the distance that is left to the row's current position, so a shift is
-   * absorbed as it happens. A row that is windowed out is brought in by BB's own
-   * `#msg=<seq>` scroll first. The reader's own input ends it at once.
+   * absorbed as it happens. A row that is windowed out is headed for a screen at a
+   * time, which mounts the rows on the way; the page's address and history are
+   * never touched. The reader's own input ends it at once.
    */
   const jump = async (target: Message) => {
     const l = live.current;
-    const timeline = l.timeline;
-    if (!timeline) return;
+    if (!l.timeline) return;
     const mine = ++l.jump;
     const stop = () => {
       if (l.jump === mine) l.jump++;
@@ -174,9 +174,8 @@ export function PinnedTurns({ threadId }: { threadId: string }) {
     const inputs = ["wheel", "touchstart", "pointerdown", "keydown"] as const;
     for (const name of inputs) window.addEventListener(name, stop, { capture: true, passive: true });
     const ease = prefersReducedMotion() ? 1 : 0.22;
-    let hashed = false;
-    let missing = 0;
     let settled = 0;
+    let stuck = 0;
     let outcome = "timeout";
     const began = performance.now();
     try {
@@ -187,38 +186,47 @@ export function PinnedTurns({ threadId }: { threadId: string }) {
           outcome = "lost";
           return;
         }
-        const row = rowById(now.items, target.id);
-        if (!row) {
-          // Windowed out and the scroll has brought nothing in: let BB land it.
-          if (++missing >= 12 && !hashed) {
-            hashed = true;
-            const hash = `#msg=${target.seq}`;
-            if (location.hash === hash) history.replaceState(history.state, "", location.pathname + location.search);
-            location.hash = hash;
+        const { scroller, items } = now;
+        const row = rowById(items, target.id);
+        let step: number;
+        if (row) {
+          const delta = jumpOffset(row.getBoundingClientRect().top, scroller.getBoundingClientRect().top, LANDING);
+          if (Math.abs(delta) <= 1) {
+            // Arrived; watch a moment longer for a late shift before letting go.
+            if (++settled >= 20) {
+              outcome = "settled";
+              return;
+            }
+            await nextFrame();
+            continue;
           }
-          await nextFrame();
-          continue;
-        }
-        missing = 0;
-        const { scroller } = now;
-        const delta = jumpOffset(row.getBoundingClientRect().top, scroller.getBoundingClientRect().top, LANDING);
-        if (Math.abs(delta) <= 1) {
-          // Arrived; watch a moment longer for a late shift before letting go.
-          if (++settled >= 20) {
-            outcome = "settled";
-            return;
-          }
-        } else {
           settled = 0;
-          const step = Math.max(1, Math.min(Math.abs(delta) * ease, scroller.clientHeight * 1.5));
-          scroller.scrollTop += Math.sign(delta) * Math.min(Math.abs(delta), step);
+          step = Math.sign(delta) * Math.min(Math.abs(delta), Math.max(1, Math.min(Math.abs(delta) * ease, scroller.clientHeight * 1.5)));
+        } else {
+          // Windowed out: which way it lies is read from where the mounted rows stand in the thread.
+          const rows = mountedRows(items);
+          const known = l.index;
+          const here = known && rows.length > 0 ? rankOfRow(rows, rows.length - 1, known.rank) : null;
+          if (here === null) {
+            await nextFrame();
+            continue;
+          }
+          step = Math.sign(target.rank - here) * scroller.clientHeight * 0.8;
         }
+        const before = scroller.scrollTop;
+        scroller.scrollTop += step;
+        // At the edge of the page the row cannot be brought any nearer (the first message sits under the bar).
+        if (scroller.scrollTop === before && ++stuck >= 4) {
+          outcome = "edge";
+          return;
+        }
+        if (scroller.scrollTop !== before) stuck = 0;
         await nextFrame();
       }
     } finally {
       for (const name of inputs) window.removeEventListener(name, stop, { capture: true });
       if (l.jump !== mine) outcome = "cancelled";
-      log.current("jump", { to: target.role, outcome, ms: Math.round(performance.now() - began), hashed });
+      log.current("jump", { to: target.role, outcome, ms: Math.round(performance.now() - began) });
     }
   };
 
@@ -263,11 +271,6 @@ const STATUS_DOT: Record<Exclude<TurnStatus, "pending">, { color: string; label:
   interrupted: { color: "#c98a1a", label: "This turn was interrupted" },
 };
 
-/**
- * One half of the bar. It holds its slot when it has nothing to say, fading out
- * through the top edge, so the pair does not shift as the reader scrolls; the
- * last text stays until it has gone.
- */
 /** How long a half takes to grow or shrink to its new text. */
 const GLIDE_MS = 100;
 
@@ -310,6 +313,11 @@ function useGlide(box: React.RefObject<HTMLDivElement | null>, key: string | und
   }, [box, key]);
 }
 
+/**
+ * One half of the bar. It holds its slot when it has nothing to say, fading out
+ * through the top edge, so the pair does not shift as the reader scrolls; the
+ * last text stays until it has gone.
+ */
 function Half({
   message,
   ink,
@@ -346,6 +354,8 @@ function Half({
   const dot = turn && turn !== "pending" ? STATUS_DOT[turn] : null;
   const running = turn === "pending";
   const what = text?.role === "assistant" ? "the latest reply" : text?.by === "system" ? "a system message" : "your message";
+  // The label stands in for the button's content, so everything the sighted see is said in it.
+  const notes = [running && "still running", dot?.label, position && `${position.ordinal} of ${position.total}`].filter(Boolean);
   return (
     <div
       ref={box}
@@ -356,7 +366,7 @@ function Half({
         type="button"
         tabIndex={message ? 0 : -1}
         aria-hidden={!message}
-        aria-label={text ? `Jump to ${what}${running ? " (still running)" : ""}: ${text.title}` : undefined}
+        aria-label={text ? `Jump to ${what}${notes.length > 0 ? ` (${notes.join(", ")})` : ""}: ${text.title}` : undefined}
         onClick={() => message && onJump(message)}
         // Lifted by its own radius so the top corners sit above the scroller's edge
         // and the bar reads as hanging from it; the top padding is the lift plus a
@@ -367,7 +377,7 @@ function Half({
         {dot ? (
           <span
             title={dot.label}
-            aria-label={dot.label}
+            aria-hidden
             className="h-2 w-2 shrink-0 rounded-full"
             style={{ background: dot.color }}
           />

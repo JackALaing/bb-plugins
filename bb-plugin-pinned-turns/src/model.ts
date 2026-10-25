@@ -71,8 +71,6 @@ export interface Message {
   role: "user" | "assistant";
   /** Timeline position of its row among *all* rows, for comparing with a DOM row. */
   rank: number;
-  /** The event sequence `#msg=<seq>` takes. */
-  seq: number;
   /** One line, cut to fit a bar. */
   title: string;
   /** The whole text with whitespace collapsed, for a tooltip. */
