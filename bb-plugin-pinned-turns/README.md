@@ -6,7 +6,7 @@ Click the pin button in the thread header for the menu:
 
 - **Pin the current turn**: the on/off switch.
 - **Turn status**: the reply's text pulses while its turn runs; a dot marks one that failed or was interrupted.
-- **Message position**: `7/23` just outside your message's right edge, the first number semibold (loads the whole thread; hidden when the window is under 840px).
+- **Turn counter**: `7/23` just outside your message's right edge, the first number semibold (loads the whole thread; hidden when the window is under 840px).
 - **Full text on hover**: a tooltip when the bar cut a message short.
 - **Debug log**: timing lines in the plugin log (`bb plugin logs pinned-turns`).
 

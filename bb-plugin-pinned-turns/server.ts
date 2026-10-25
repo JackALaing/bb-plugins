@@ -33,8 +33,8 @@ export default async function plugin(bb: BbPluginApi) {
     },
     showPosition: {
       type: "boolean",
-      label: "Show message position",
-      description: "Where the pinned message sits among the thread's messages, like 7/23. Loads the whole thread.",
+      label: "Show turn counter",
+      description: "Which of the thread's turns the pinned message is, like 7/23. Loads the whole thread.",
       default: true,
     },
     showFullText: {
