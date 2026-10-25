@@ -42,7 +42,9 @@ export function HeaderMenu() {
   const scope = usePortalScopeProps();
 
   return (
-    <Menu.Root>
+    // Not modal: a modal menu hides and locks the rest of the page on open, which cost
+    // ~165ms here for five switches that need no focus trap.
+    <Menu.Root modal={false}>
       <Menu.Trigger asChild>
         <button
           type="button"
