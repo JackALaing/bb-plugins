@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { indexOf } from "./rows.ts";
 import { PIN_ROW_HEIGHT, bandAt, bandContent, dataIdOf, jumpOffset, lastAtOrAbove, oneLine, turnStatus, type Message, type Pin } from "./model.ts";
 
 test("bandContent: last message and last reply past the line, same line for both", () => {
@@ -73,4 +74,35 @@ test("turnStatus: running wins, then the last of reply/failure/interruption", ()
   assert.equal(turnStatus(["error", "assistant"]), undefined, "a reply after the error recovered the turn");
   assert.equal(turnStatus(["assistant", "interrupted"]), "interrupted");
   assert.equal(turnStatus(["interrupted", "error"]), "error");
+});
+
+// Rows as the timeline gives them, cut down to the fields `indexOf` reads.
+const user = (seq: number, text = `q${seq}`, extra: object = {}) =>
+  ({ kind: "conversation", role: "user", id: `t:user-seed:${seq}`, messageSeq: seq, text, mentions: [], initiator: "user", ...extra }) as never;
+const reply = (n: number, text = `a${n}`) => ({ kind: "conversation", role: "assistant", id: `t:assistant:${n}`, messageSeq: 0, text }) as never;
+const work = (status: string) => ({ kind: "tool", id: `t:work:${status}`, status }) as never;
+const systemError = () => ({ kind: "system", id: "t:err", systemKind: "error", status: "complete" }) as never;
+
+test("indexOf: a running turn marks its question and its replies; a finished one marks neither", () => {
+  const { messages } = indexOf([user(1), reply(1), user(2), reply(2), work("pending")], false);
+  const byTitle = Object.fromEntries(messages.map((m) => [m.title, m.status]));
+  assert.deepEqual(byTitle, { q1: undefined, a1: undefined, q2: "pending", a2: "pending" });
+});
+
+test("indexOf: a running turn with no reply yet still marks its question", () => {
+  const { messages } = indexOf([user(1), reply(1), user(2), work("pending")], false);
+  assert.equal(messages.find((m) => m.title === "q2")?.status, "pending");
+  assert.equal(messages.find((m) => m.title === "q1")?.status, undefined);
+});
+
+test("indexOf: a failed turn marks only the reply; the question stays unmarked", () => {
+  const { messages } = indexOf([user(1), reply(1), systemError()], false);
+  assert.equal(messages.find((m) => m.title === "a1")?.status, "error");
+  assert.equal(messages.find((m) => m.title === "q1")?.status, undefined);
+});
+
+test("indexOf: counts user messages and skips agent-initiated ones", () => {
+  const out = indexOf([user(1), reply(1), user(2, "from an agent", { initiator: "agent" }), user(3)], false);
+  assert.deepEqual(out.messages.filter((m) => m.role === "user").map((m) => [m.title, m.ordinal]), [["q1", 1], ["q3", 2]]);
+  assert.equal(out.userTotal, 2);
 });

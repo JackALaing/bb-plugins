@@ -79,7 +79,7 @@ export interface Message {
   full: string;
   /** Whether the user typed a `user` row, or BB wrote it (a child thread finishing). */
   by: "user" | "system";
-  /** A reply's turn status; absent when the turn completed. */
+  /** A reply's turn status, or "pending" on the user message whose turn is running; absent otherwise. */
   status?: TurnStatus;
   /** A user row's place among the thread's user rows, counting from 1. */
   ordinal?: number;

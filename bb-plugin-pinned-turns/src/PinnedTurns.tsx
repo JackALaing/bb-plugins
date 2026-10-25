@@ -238,6 +238,7 @@ export function PinnedTurns({ threadId }: { threadId: string }) {
         className="ml-auto max-w-[70%] flex-none"
         glide
         ink={MESSAGE_INK}
+        status={options.showStatus}
         tooltip={options.showFullText}
         position={roomForPosition && total > 0 && shown.message?.ordinal ? { ordinal: shown.message.ordinal, total } : undefined}
       />
@@ -322,7 +323,7 @@ function Half({
   message: Message | null;
   ink: string;
   className: string;
-  /** Mark the turn's status on this half (the reply). */
+  /** Show the turn's status on this half: it pulses while the turn runs; the reply alone also carries failed/interrupted. */
   status?: boolean;
   /** Offer the full text on hover when the bar cut it short. */
   tooltip: boolean;

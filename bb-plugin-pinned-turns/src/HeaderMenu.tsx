@@ -6,7 +6,7 @@ import { useOptions } from "./options";
 import { usePortalScopeProps } from "./portal-scope";
 
 const ITEMS: { key: SettingKey; label: string; hint?: string }[] = [
-  { key: "showStatus", label: "Turn status", hint: "Pulse a running reply; mark one that failed or was interrupted" },
+  { key: "showStatus", label: "Turn status", hint: "Pulse a running turn; mark a reply that failed or was interrupted" },
   { key: "showPosition", label: "Turn counter", hint: "Show 7/23 beside your message" },
   { key: "showFullText", label: "Full text on hover", hint: "When the bar cuts a message short" },
 ];

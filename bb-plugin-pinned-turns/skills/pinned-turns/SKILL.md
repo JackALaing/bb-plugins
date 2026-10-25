@@ -14,7 +14,7 @@ Click the pin button in the thread header, or use `bb plugin config pinned-turns
 | Key | Default | Effect |
 | --- | --- | --- |
 | `enabled` | on | The bar itself. |
-| `showStatus` | on | The reply pulses while its turn runs; a dot marks one that failed or was interrupted. |
+| `showStatus` | on | Your message and the reply pulse while the turn runs; a dot marks one that failed or was interrupted. |
 | `showPinButton` | on | The header pin button; switch it back on here if you hid it from the menu. |
 | `showPosition` | on (the turn counter) | `7/23` outside the message's right edge; fetches the whole thread. |
 | `showFullText` | on | Tooltip with the whole message when the bar cut it short. |
