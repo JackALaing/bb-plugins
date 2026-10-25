@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRpc } from "@get-bb/plugin-sdk/app";
 import type { rpcContract } from "../server";
@@ -236,6 +236,7 @@ export function PinnedTurns({ threadId }: { threadId: string }) {
         message={shown.message}
         onJump={jump}
         className="ml-auto max-w-[70%] flex-none"
+        glide
         ink={MESSAGE_INK}
         tooltip={options.showFullText}
         position={roomForPosition && total > 0 && shown.message?.ordinal ? { ordinal: shown.message.ordinal, total } : undefined}
@@ -266,6 +267,48 @@ const STATUS_DOT: Record<Exclude<TurnStatus, "pending">, { color: string; label:
  * through the top edge, so the pair does not shift as the reader scrolls; the
  * last text stays until it has gone.
  */
+/** How long a half takes to grow or shrink to its new text. */
+const GLIDE_MS = 100;
+
+/**
+ * Animates an element's width between texts. `key` is what the element shows (undefined
+ * turns this off); when it changes, the width runs from where it was, or is still
+ * running, to the width the new text needs. The element is only ever animated by the
+ * Web Animations API, so it stays `width: auto` the rest of the time.
+ */
+function useGlide(box: React.RefObject<HTMLDivElement | null>, key: string | undefined) {
+  const state = useRef({ width: 0, running: null as Animation | null });
+  // Track the settled width so a window resize does not leave a stale starting point.
+  useEffect(() => {
+    const el = box.current;
+    if (!el || key === undefined) return;
+    const observer = new ResizeObserver(() => {
+      if (!state.current.running) state.current.width = el.getBoundingClientRect().width;
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [box, key === undefined]);
+  useLayoutEffect(() => {
+    const el = box.current;
+    if (!el || key === undefined) return;
+    const s = state.current;
+    // Mid-glide, start from the width on screen now; otherwise from the last settled one.
+    const from = s.running ? el.getBoundingClientRect().width : s.width;
+    s.running?.cancel();
+    s.running = null;
+    const to = el.getBoundingClientRect().width;
+    s.width = to;
+    if (from === 0 || Math.abs(from - to) < 1 || prefersReducedMotion()) return;
+    const animation = el.animate([{ width: `${from}px` }, { width: `${to}px` }], { duration: GLIDE_MS, easing: "ease-out" });
+    s.running = animation;
+    const done = () => {
+      if (s.running === animation) s.running = null;
+    };
+    animation.onfinish = done;
+    animation.oncancel = done;
+  }, [box, key]);
+}
+
 function Half({
   message,
   ink,
@@ -273,6 +316,7 @@ function Half({
   status,
   tooltip,
   position,
+  glide,
   onJump,
 }: {
   message: Message | null;
@@ -284,17 +328,26 @@ function Half({
   tooltip: boolean;
   /** Where this message sits among the thread's, drawn outside the half's right edge. */
   position?: { ordinal: number; total: number };
+  /**
+   * Ease the half's width to the new text's when it changes, instead of snapping. Only
+   * the message half sizes itself to its text; the reply takes what is left, so it
+   * follows without being animated itself.
+   */
+  glide?: boolean;
   onJump: (message: Message) => void;
 }) {
   const last = useRef<Message | null>(null);
   if (message) last.current = message;
   const text = message ?? last.current;
+  const box = useRef<HTMLDivElement>(null);
+  useGlide(box, glide ? text?.title : undefined);
   const turn = status ? text?.status : undefined;
   const dot = turn && turn !== "pending" ? STATUS_DOT[turn] : null;
   const running = turn === "pending";
   const what = text?.role === "assistant" ? "the latest reply" : text?.by === "system" ? "a system message" : "your message";
   return (
     <div
+      ref={box}
       className={`${className} relative transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none ${message ? "" : "pointer-events-none -translate-y-full opacity-0"}`}
       style={{ pointerEvents: message ? "auto" : "none" }}
     >
