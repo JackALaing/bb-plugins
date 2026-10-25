@@ -336,7 +336,7 @@ function Half({
         // inside it, so the two share a baseline.
         <span
           aria-hidden
-          className="pointer-events-none absolute whitespace-nowrap text-sm leading-relaxed tabular-nums text-foreground opacity-75"
+          className="pointer-events-none absolute whitespace-nowrap text-sm leading-relaxed tabular-nums text-foreground opacity-55"
           style={{ left: "100%", marginLeft: 6, top: 6 }}
         >
           <span style={{ fontSize: "90%" }}>
