@@ -255,17 +255,17 @@ const MESSAGE_INK = "var(--surface-recessed-solid)";
 const REPLY_INK =
   "light-dark(color-mix(in oklab, var(--foreground) 10%, var(--background)), color-mix(in oklab, var(--foreground) 3%, var(--background)))";
 
+/** A mark for a turn that ended badly. A running turn is shown by pulsing the text instead. */
+const STATUS_DOT: Record<Exclude<TurnStatus, "pending">, { color: string; label: string }> = {
+  error: { color: "#d4493a", label: "This turn ended in an error" },
+  interrupted: { color: "#c98a1a", label: "This turn was interrupted" },
+};
+
 /**
  * One half of the bar. It holds its slot when it has nothing to say, fading out
  * through the top edge, so the pair does not shift as the reader scrolls; the
  * last text stays until it has gone.
  */
-const STATUS_DOT: Record<TurnStatus, { color: string; label: string; pulse?: boolean }> = {
-  pending: { color: "var(--foreground)", label: "This turn is still running", pulse: true },
-  error: { color: "#d4493a", label: "This turn ended in an error" },
-  interrupted: { color: "#c98a1a", label: "This turn was interrupted" },
-};
-
 function Half({
   message,
   ink,
@@ -289,7 +289,9 @@ function Half({
   const last = useRef<Message | null>(null);
   if (message) last.current = message;
   const text = message ?? last.current;
-  const dot = status && text?.status ? STATUS_DOT[text.status] : null;
+  const turn = status ? text?.status : undefined;
+  const dot = turn && turn !== "pending" ? STATUS_DOT[turn] : null;
+  const running = turn === "pending";
   const what = text?.role === "assistant" ? "the latest reply" : text?.by === "system" ? "a system message" : "your message";
   return (
     <div
@@ -300,7 +302,7 @@ function Half({
         type="button"
         tabIndex={message ? 0 : -1}
         aria-hidden={!message}
-        aria-label={text ? `Jump to ${what}: ${text.title}` : undefined}
+        aria-label={text ? `Jump to ${what}${running ? " (still running)" : ""}: ${text.title}` : undefined}
         onClick={() => message && onJump(message)}
         // Lifted by its own radius so the top corners sit above the scroller's edge
         // and the bar reads as hanging from it; the top padding is the lift plus a
@@ -312,13 +314,13 @@ function Half({
           <span
             title={dot.label}
             aria-label={dot.label}
-            className={`h-2 w-2 shrink-0 rounded-full ${dot.pulse ? "animate-pulse" : ""}`}
+            className="h-2 w-2 shrink-0 rounded-full"
             style={{ background: dot.color }}
           />
         ) : null}
         {/* The ellipsis needs a block of its own: a button's content box does not clip with one. */}
         <span
-          className="block min-w-0 truncate"
+          className={`block min-w-0 truncate ${running ? "animate-pulse motion-reduce:animate-none" : ""}`}
           // Only when the bar cut the text short; a native tooltip on a whole line is noise.
           onMouseEnter={(event) => {
             const el = event.currentTarget;

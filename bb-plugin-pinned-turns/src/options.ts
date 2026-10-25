@@ -8,6 +8,7 @@ export const DEFAULTS: Record<SettingKey, boolean> = {
   showPosition: true,
   showFullText: true,
   debugLog: true,
+  showPinButton: true,
 };
 
 /** The saved settings, with the defaults filling anything not yet loaded. */
@@ -20,5 +21,6 @@ export function useOptions(): Record<SettingKey, boolean> {
     showPosition: read("showPosition"),
     showFullText: read("showFullText"),
     debugLog: read("debugLog"),
+    showPinButton: read("showPinButton"),
   };
 }

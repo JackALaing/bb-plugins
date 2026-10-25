@@ -6,10 +6,22 @@ import { useOptions } from "./options";
 import { usePortalScopeProps } from "./portal-scope";
 
 const ITEMS: { key: SettingKey; label: string; hint?: string }[] = [
-  { key: "showStatus", label: "Turn status", hint: "Mark a reply that is running, failed or was interrupted" },
+  { key: "showStatus", label: "Turn status", hint: "Pulse a running reply; mark one that failed or was interrupted" },
   { key: "showPosition", label: "Message position", hint: "Show 7/23 beside your message" },
   { key: "showFullText", label: "Full text on hover", hint: "When the bar cuts a message short" },
 ];
+
+/** Where this plugin's settings live in BB. */
+const SETTINGS_PATH = "/settings/plugins/pinned-turns";
+
+/**
+ * Opens a BB route in place. The SDK has no call for plugin settings, so this pushes
+ * the route and tells BB's router; a plain link would reload the page.
+ */
+function openSettings() {
+  history.pushState(null, "", SETTINGS_PATH);
+  window.dispatchEvent(new PopStateEvent("popstate", { state: null }));
+}
 
 /**
  * The thread header's pin button. It opens the menu where the bar is switched on
@@ -27,7 +39,7 @@ export function HeaderMenu() {
       for (const key of Object.keys(now) as SettingKey[]) if (saved[key] === now[key]) delete next[key];
       return Object.keys(next).length === Object.keys(now).length ? now : next;
     });
-  }, [saved.enabled, saved.showStatus, saved.showPosition, saved.showFullText, saved.debugLog]);
+  }, [saved.enabled, saved.showStatus, saved.showPosition, saved.showFullText, saved.debugLog, saved.showPinButton]);
   const value = (key: SettingKey) => pending[key] ?? saved[key];
   const set = (key: SettingKey, next: boolean) => {
     setPending((now) => ({ ...now, [key]: next }));
@@ -40,6 +52,9 @@ export function HeaderMenu() {
   };
   const on = value("enabled");
   const scope = usePortalScopeProps();
+
+  // Hidden for good until the setting is switched back on in the plugin's settings.
+  if (!saved.showPinButton) return null;
 
   return (
     // Not modal: a modal menu hides and locks the rest of the page on open, which cost
@@ -69,6 +84,22 @@ export function HeaderMenu() {
           ))}
           <Menu.Separator className="my-1 h-px bg-border-seam" />
           <Row checked={value("debugLog")} onChange={(next) => set("debugLog", next)} label="Debug log" hint="bb plugin logs pinned-turns" />
+          <Row
+            checked={value("showPinButton")}
+            onChange={(next) => set("showPinButton", next)}
+            label="Show this button"
+            hint="Hidden, it comes back in the plugin's settings"
+          />
+          <Menu.Separator className="my-1 h-px bg-border-seam" />
+          <Menu.Item
+            onSelect={openSettings}
+            className="relative flex cursor-pointer select-none items-center gap-2 rounded-md py-1.5 pl-8 pr-3 outline-none data-[highlighted]:bg-surface-recessed"
+          >
+            <span className="absolute left-2.5 flex h-4 w-4 items-center justify-center">
+              <Icon name="Settings" fallback="Pin" className="h-4 w-4" aria-hidden />
+            </span>
+            Plugin settings
+          </Menu.Item>
         </Menu.Content>
       </Menu.Portal>
     </Menu.Root>

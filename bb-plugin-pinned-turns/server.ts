@@ -8,7 +8,7 @@ import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
 import { z } from "zod";
 
 /** The boolean settings the header menu switches. */
-export const SETTING_KEYS = ["enabled", "showStatus", "showPosition", "showFullText", "debugLog"] as const;
+export const SETTING_KEYS = ["enabled", "showStatus", "showPosition", "showFullText", "debugLog", "showPinButton"] as const;
 export type SettingKey = (typeof SETTING_KEYS)[number];
 
 export const rpcContract = defineRpcContract({
@@ -41,6 +41,12 @@ export default async function plugin(bb: BbPluginApi) {
       type: "boolean",
       label: "Show full text on hover",
       description: "A tooltip with the whole message when the bar had to cut it short.",
+      default: true,
+    },
+    showPinButton: {
+      type: "boolean",
+      label: "Show the pin button",
+      description: "The thread header button that opens the Pinned Turns menu. Switch this back on here if you hid it.",
       default: true,
     },
     debugLog: {
