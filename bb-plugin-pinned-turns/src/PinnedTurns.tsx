@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { useRpc } from "@get-bb/plugin-sdk/app";
+import type { rpcContract } from "../server";
 import { findTimeline, mountedRows, prefersReducedMotion, rankOfRow, rowById, type Timeline } from "./dom";
-import { PIN_ROW_HEIGHT, bandAt, jumpOffset, lastAtOrAbove, type Message } from "./model";
-import { useTimeline, type TimelineIndex } from "./timeline";
+import { PIN_ROW_HEIGHT, bandAt, jumpOffset, lastAtOrAbove, type Message, type TurnStatus } from "./model";
+import { useOptions } from "./options";
+import { useTimeline, type Debug, type TimelineIndex } from "./timeline";
 
 /**
  * Where a jump leaves a row, as an offset from the scroller's top. The bar's
@@ -24,7 +27,8 @@ interface Shown {
 }
 const NONE: Shown = { message: null, reply: null };
 
-const sameMessage = (a: Message | null, b: Message | null) => a?.id === b?.id && a?.title === b?.title;
+const sameMessage = (a: Message | null, b: Message | null) =>
+  a?.id === b?.id && a?.title === b?.title && a?.status === b?.status && a?.ordinal === b?.ordinal;
 
 const nextFrame = () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 
@@ -37,7 +41,18 @@ const nextFrame = () => new Promise<void>((resolve) => requestAnimationFrame(() 
 export function PinnedTurns({ threadId }: { threadId: string }) {
   const [host, setHost] = useState<HTMLElement | null>(null);
   const [shown, setShown] = useState<Shown>(NONE);
-  const { index, loadOlder } = useTimeline(threadId);
+  const options = useOptions();
+  const rpc = useRpc<typeof rpcContract>();
+  // The server drops these unless the debug log is on; skipping the call here saves the round trip.
+  const debug = useCallback<Debug>(
+    (event, data) => {
+      if (options.debugLog) rpc.call("debug", { event, data }).catch(() => {});
+    },
+    [rpc, options.debugLog],
+  );
+  const log = useRef(debug);
+  log.current = debug;
+  const { index, loadOlder } = useTimeline(threadId, debug);
   const live = useRef({ timeline: null as Timeline | null, index: null as TimelineIndex | null, frame: 0, jump: 0 });
   const paint = useRef(() => {});
 
@@ -77,6 +92,11 @@ export function PinnedTurns({ threadId }: { threadId: string }) {
     schedule();
   }, [index, schedule]);
 
+  // "7/23" needs every message, so while it is on the older pages are fetched in turn.
+  useEffect(() => {
+    if (options.showPosition && index.hasOlder) loadOlder();
+  }, [options.showPosition, index, loadOlder]);
+
   // Park the row in the scroller and keep it parked. The scroller can be rebuilt
   // under a thread (a layout change), so a cheap check re-attaches when it is gone.
   useEffect(() => {
@@ -86,6 +106,7 @@ export function PinnedTurns({ threadId }: { threadId: string }) {
     const l = live.current;
 
     const detach = () => {
+      if (timeline) log.current("detach", { scrollerConnected: timeline.scroller.isConnected, itemsConnected: timeline.items.isConnected });
       observer?.disconnect();
       timeline?.scroller.removeEventListener("scroll", schedule);
       element?.remove();
@@ -107,6 +128,7 @@ export function PinnedTurns({ threadId }: { threadId: string }) {
       observer.observe(found.items);
       observer.observe(found.scroller);
       l.timeline = found;
+      log.current("attach", { rows: found.items.children.length });
       setHost(element);
       schedule();
     };
@@ -146,11 +168,16 @@ export function PinnedTurns({ threadId }: { threadId: string }) {
     let hashed = false;
     let missing = 0;
     let settled = 0;
+    let outcome = "timeout";
+    const began = performance.now();
     try {
       const deadline = performance.now() + 5000;
       while (performance.now() < deadline && l.jump === mine) {
         const now = l.timeline;
-        if (!now) return;
+        if (!now) {
+          outcome = "lost";
+          return;
+        }
         const row = rowById(now.items, target.id);
         if (!row) {
           // Windowed out and the scroll has brought nothing in: let BB land it.
@@ -168,7 +195,10 @@ export function PinnedTurns({ threadId }: { threadId: string }) {
         const delta = jumpOffset(row.getBoundingClientRect().top, scroller.getBoundingClientRect().top, LANDING);
         if (Math.abs(delta) <= 1) {
           // Arrived; watch a moment longer for a late shift before letting go.
-          if (++settled >= 20) return;
+          if (++settled >= 20) {
+            outcome = "settled";
+            return;
+          }
         } else {
           settled = 0;
           const step = Math.max(1, Math.min(Math.abs(delta) * ease, scroller.clientHeight * 1.5));
@@ -178,10 +208,13 @@ export function PinnedTurns({ threadId }: { threadId: string }) {
       }
     } finally {
       for (const name of inputs) window.removeEventListener(name, stop, { capture: true });
+      if (l.jump !== mine) outcome = "cancelled";
+      log.current("jump", { to: target.role, outcome, ms: Math.round(performance.now() - began), hashed });
     }
   };
 
   if (!host) return null;
+  const total = options.showPosition && !index.hasOlder ? index.userTotal : 0;
   return createPortal(
     // The message is the reader's own bubble, so it sits right at its own width; the
     // reply takes every pixel it leaves. Nothing is measured to keep them apart.
@@ -189,8 +222,15 @@ export function PinnedTurns({ threadId }: { threadId: string }) {
       className="flex items-start gap-2"
       style={{ margin: "0 auto", maxWidth: `min(728px, calc(100% - ${SIDE_ROOM * 2}px))` }}
     >
-      <Half message={shown.reply} what="the latest reply" onJump={jump} className="min-w-0 flex-1" ink={REPLY_INK} />
-      <Half message={shown.message} what="your message" onJump={jump} className="ml-auto max-w-[70%] flex-none" ink={MESSAGE_INK} />
+      <Half message={shown.reply} onJump={jump} className="min-w-0 flex-1" ink={REPLY_INK} status={options.showStatus} tooltip={options.showFullText} />
+      <Half
+        message={shown.message}
+        onJump={jump}
+        className="ml-auto max-w-[70%] flex-none"
+        ink={MESSAGE_INK}
+        tooltip={options.showFullText}
+        position={total > 0 && shown.message?.ordinal ? `${shown.message.ordinal}/${total}` : undefined}
+      />
     </div>,
     host,
   );
@@ -211,22 +251,37 @@ const REPLY_INK =
  * through the top edge, so the pair does not shift as the reader scrolls; the
  * last text stays until it has gone.
  */
+const STATUS_DOT: Record<TurnStatus, { color: string; label: string; pulse?: boolean }> = {
+  pending: { color: "var(--foreground)", label: "This turn is still running", pulse: true },
+  error: { color: "#d4493a", label: "This turn ended in an error" },
+  interrupted: { color: "#c98a1a", label: "This turn was interrupted" },
+};
+
 function Half({
   message,
-  what,
   ink,
   className,
+  status,
+  tooltip,
+  position,
   onJump,
 }: {
   message: Message | null;
-  what: string;
   ink: string;
   className: string;
+  /** Mark the turn's status on this half (the reply). */
+  status?: boolean;
+  /** Offer the full text on hover when the bar cut it short. */
+  tooltip: boolean;
+  /** "7/23", drawn small after the text. */
+  position?: string;
   onJump: (message: Message) => void;
 }) {
   const last = useRef<Message | null>(null);
   if (message) last.current = message;
   const text = message ?? last.current;
+  const dot = status && text?.status ? STATUS_DOT[text.status] : null;
+  const what = text?.role === "assistant" ? "the latest reply" : text?.by === "system" ? "a system message" : "your message";
   return (
     <div
       className={`${className} transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none ${message ? "" : "pointer-events-none -translate-y-full opacity-0"}`}
@@ -241,11 +296,31 @@ function Half({
         // Lifted by its own radius so the top corners sit above the scroller's edge
         // and the bar reads as hanging from it; the top padding is the lift plus a
         // small gap, so hiding the corners costs no visible space.
-        className="block w-full max-w-full cursor-pointer rounded-xl border border-border-seam px-4 pb-2.5 text-left text-sm leading-relaxed text-foreground shadow-[0_8px_20px_-8px_rgba(0,0,0,.35)] transition-[transform,box-shadow] duration-100 ease-out hover:-translate-y-0.5 hover:shadow-[0_10px_22px_-8px_rgba(0,0,0,.5)] focus-visible:-translate-y-0.5 focus-visible:shadow-[0_10px_22px_-8px_rgba(0,0,0,.5)] active:translate-y-px active:shadow-none"
+        className="flex w-full max-w-full cursor-pointer items-center gap-2 rounded-xl border border-border-seam px-4 pb-2.5 text-left text-sm leading-relaxed text-foreground shadow-[0_8px_20px_-8px_rgba(0,0,0,.35)] transition-[transform,box-shadow] duration-100 ease-out hover:-translate-y-0.5 hover:shadow-[0_10px_22px_-8px_rgba(0,0,0,.5)] focus-visible:-translate-y-0.5 focus-visible:shadow-[0_10px_22px_-8px_rgba(0,0,0,.5)] active:translate-y-px active:shadow-none"
         style={{ background: ink, marginTop: -RADIUS, paddingTop: RADIUS + 5 }}
       >
+        {dot ? (
+          <span
+            title={dot.label}
+            aria-label={dot.label}
+            className={`h-2 w-2 shrink-0 rounded-full ${dot.pulse ? "animate-pulse" : ""}`}
+            style={{ background: dot.color }}
+          />
+        ) : null}
         {/* The ellipsis needs a block of its own: a button's content box does not clip with one. */}
-        <span className="block truncate">{text?.title}</span>
+        <span
+          className="block min-w-0 truncate"
+          // Only when the bar cut the text short; a native tooltip on a whole line is noise.
+          onMouseEnter={(event) => {
+            const el = event.currentTarget;
+            const cut = tooltip && text && el.scrollWidth > el.clientWidth;
+            if (cut) el.title = text.full;
+            else el.removeAttribute("title");
+          }}
+        >
+          {text?.title}
+        </span>
+        {position ? <span className="shrink-0 text-xs tabular-nums text-muted-foreground">{position}</span> : null}
       </button>
     </div>
   );

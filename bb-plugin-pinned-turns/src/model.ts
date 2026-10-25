@@ -62,6 +62,9 @@ export function jumpOffset(rowTop: number, pinTop: number, height = PIN_ROW_HEIG
 // covers messages whose rows are not mounted. `bandContent` stays as the oracle
 // the checks compare this against.
 
+/** How a turn ended up, when that is worth a mark. A turn that completed has none. */
+export type TurnStatus = "pending" | "error" | "interrupted";
+
 /** One user message or agent reply, in timeline order. */
 export interface Message {
   id: string;
@@ -70,7 +73,34 @@ export interface Message {
   rank: number;
   /** The event sequence `#msg=<seq>` takes. */
   seq: number;
+  /** One line, cut to fit a bar. */
   title: string;
+  /** The whole text with whitespace collapsed, for a tooltip. */
+  full: string;
+  /** Whether the user typed a `user` row, or BB wrote it (a child thread finishing). */
+  by: "user" | "system";
+  /** A reply's turn status; absent when the turn completed. */
+  status?: TurnStatus;
+  /** A user row's place among the thread's user rows, counting from 1. */
+  ordinal?: number;
+}
+
+/** What a row contributes to its turn, in the terms `turnStatus` needs. */
+export type SpanEvent = "assistant" | "error" | "interrupted" | "pending";
+
+/**
+ * How a turn ended, from the events between one user message and the next.
+ * Running work wins. Otherwise the last of reply, failure and interruption decides:
+ * a provider error that a later reply recovered from is not a failed turn.
+ */
+export function turnStatus(events: readonly SpanEvent[]): TurnStatus | undefined {
+  if (events.includes("pending")) return "pending";
+  for (let i = events.length - 1; i >= 0; i--) {
+    const event = events[i]!;
+    if (event === "error" || event === "interrupted") return event;
+    if (event === "assistant") return undefined;
+  }
+  return undefined;
 }
 
 /** The last index in 0..n-1 whose top is at or above `line`, or -1. Tops must not decrease. */

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { PIN_ROW_HEIGHT, bandAt, bandContent, dataIdOf, jumpOffset, lastAtOrAbove, oneLine, type Message, type Pin } from "./model.ts";
+import { PIN_ROW_HEIGHT, bandAt, bandContent, dataIdOf, jumpOffset, lastAtOrAbove, oneLine, turnStatus, type Message, type Pin } from "./model.ts";
 
 test("bandContent: last message and last reply past the line, same line for both", () => {
   const pin = (top: number, title: string): Pin<string> => ({ top, title, ref: title });
@@ -39,8 +39,8 @@ test("bandAt agrees with bandContent on random timelines", () => {
       top += rand() * 120;
       rows.push({ rank, top });
       const r = rand();
-      if (r < 0.2) messages.push({ id: `u${rank}`, role: "user", rank, seq: rank, title: `u${rank}` });
-      else if (r < 0.45) messages.push({ id: `a${rank}`, role: "assistant", rank, seq: rank, title: `a${rank}` });
+      if (r < 0.2) messages.push({ id: `u${rank}`, role: "user", rank, seq: rank, title: `u${rank}`, full: "", by: "user" });
+      else if (r < 0.45) messages.push({ id: `a${rank}`, role: "assistant", rank, seq: rank, title: `a${rank}`, full: "", by: "user" });
     }
     const line = rand() * 1500 - 1000;
     const pins = (role: Message["role"]) =>
@@ -63,4 +63,14 @@ test("oneLine collapses whitespace and drops fences and heading marks", () => {
 test("dataIdOf unwraps a folded work-summary row id", () => {
   assert.equal(dataIdOf("thr_a:user-seed:3"), "thr_a:user-seed:3");
   assert.equal(dataIdOf("thr_a:da-t5:work-summary:thr_a:command:da-i217"), "thr_a:command:da-i217");
+});
+
+test("turnStatus: running wins, then the last of reply/failure/interruption", () => {
+  assert.equal(turnStatus([]), undefined);
+  assert.equal(turnStatus(["assistant"]), undefined);
+  assert.equal(turnStatus(["assistant", "pending"]), "pending");
+  assert.equal(turnStatus(["error"]), "error");
+  assert.equal(turnStatus(["error", "assistant"]), undefined, "a reply after the error recovered the turn");
+  assert.equal(turnStatus(["assistant", "interrupted"]), "interrupted");
+  assert.equal(turnStatus(["interrupted", "error"]), "error");
 });
