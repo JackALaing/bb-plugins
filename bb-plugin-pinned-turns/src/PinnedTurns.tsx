@@ -20,6 +20,11 @@ const RADIUS = 12;
  * vertical middle of the right edge, not at the top, so it does not meet the bar.
  */
 const SIDE_ROOM = 16;
+/**
+ * The position counter hangs outside the bar's right edge. Below this scroller width
+ * the bar fills the column and the counter would be clipped, so it is left out.
+ */
+const POSITION_ROOM = 840;
 
 interface Shown {
   message: Message | null;
@@ -41,6 +46,7 @@ const nextFrame = () => new Promise<void>((resolve) => requestAnimationFrame(() 
 export function PinnedTurns({ threadId }: { threadId: string }) {
   const [host, setHost] = useState<HTMLElement | null>(null);
   const [shown, setShown] = useState<Shown>(NONE);
+  const [roomForPosition, setRoomForPosition] = useState(true);
   const options = useOptions();
   const rpc = useRpc<typeof rpcContract>();
   // The server drops these unless the debug log is on; skipping the call here saves the round trip.
@@ -124,7 +130,10 @@ export function PinnedTurns({ threadId }: { threadId: string }) {
       element.style.cssText = "position:sticky;top:0;height:0;z-index:20;pointer-events:none";
       found.frame.insertBefore(element, found.frame.firstChild);
       found.scroller.addEventListener("scroll", schedule, { passive: true });
-      observer = new ResizeObserver(schedule);
+      observer = new ResizeObserver(() => {
+        setRoomForPosition(found.scroller.clientWidth >= POSITION_ROOM);
+        schedule();
+      });
       observer.observe(found.items);
       observer.observe(found.scroller);
       l.timeline = found;
@@ -229,7 +238,7 @@ export function PinnedTurns({ threadId }: { threadId: string }) {
         className="ml-auto max-w-[70%] flex-none"
         ink={MESSAGE_INK}
         tooltip={options.showFullText}
-        position={total > 0 && shown.message?.ordinal ? `${shown.message.ordinal}/${total}` : undefined}
+        position={roomForPosition && total > 0 && shown.message?.ordinal ? `${shown.message.ordinal}/${total}` : undefined}
       />
     </div>,
     host,
@@ -284,7 +293,7 @@ function Half({
   const what = text?.role === "assistant" ? "the latest reply" : text?.by === "system" ? "a system message" : "your message";
   return (
     <div
-      className={`${className} transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none ${message ? "" : "pointer-events-none -translate-y-full opacity-0"}`}
+      className={`${className} relative transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none ${message ? "" : "pointer-events-none -translate-y-full opacity-0"}`}
       style={{ pointerEvents: message ? "auto" : "none" }}
     >
       <button
@@ -320,8 +329,17 @@ function Half({
         >
           {text?.title}
         </span>
-        {position ? <span className="shrink-0 text-xs tabular-nums text-muted-foreground">{position}</span> : null}
       </button>
+      {/* Hangs off the right edge so it never takes width from the message (see POSITION_ROOM). */}
+      {position ? (
+        <span
+          aria-hidden
+          className="pointer-events-none absolute whitespace-nowrap text-xs tabular-nums leading-[23px] text-muted-foreground"
+          style={{ left: "100%", marginLeft: 6, top: 5 }}
+        >
+          {position}
+        </span>
+      ) : null}
     </div>
   );
 }
