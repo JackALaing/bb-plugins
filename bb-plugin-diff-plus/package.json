@@ -1,0 +1,36 @@
+{
+  "name": "bb-plugin-diff-plus",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "bb": ">=0.47",
+    "bbPluginSdk": ">=0.6.79"
+  },
+  "scripts": {
+    "build": "bb plugin build",
+    "dev": "bb plugin dev",
+    "check": "tsc --noEmit",
+    "test": "node --test src/folders.test.ts src/file-icons.test.ts",
+    "icons": "node scripts/icons.mjs"
+  },
+  "bb": {
+    "name": "Diff Plus",
+    "description": "Browse the files in BB's Diff tab as a folder tree, with counts and +/- per folder.",
+    "branding": {
+      "icon": "FileDiff"
+    },
+    "server": "./server.ts",
+    "app": "./app.tsx",
+    "skills": [
+      "skills"
+    ]
+  },
+  "devDependencies": {
+    "@get-bb/plugin-sdk": "0.6.79",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "typescript": "^5.7.0"
+  }
+}

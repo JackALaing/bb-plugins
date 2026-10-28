@@ -1,0 +1,252 @@
+/*
+ * The plugin's own classes, prefixed so nothing of BB's matches them. `bb plugin
+ * build` scopes Tailwind utilities as `:where([data-bb-plugin=…]) .<utility>`, and BB's
+ * elements carry the same class names, so every utility a plugin uses is matched
+ * against the whole page on every style recalc. CSS imported here is passed through
+ * as written.
+ */
+
+.diff-plus-icon {
+  width: 0.875rem;
+  height: 0.875rem;
+  flex-shrink: 0;
+}
+
+/*
+ * The folder tree (src/Tree.tsx). Its column goes first in the box around BB's
+ * file list, which the plugin flags with `data-diff-plus-tree`: "side" lays it
+ * out as a row, the tree beside the list, and "stacked" (a narrow tab) as a
+ * column, the tree above it. The toggle goes first in the tab's toolbar actions
+ * and copies their look.
+ */
+div[data-diff-plus-tree="side"] {
+  flex-direction: row;
+}
+div[data-diff-plus-tree] > :not(.diff-plus-tree) {
+  min-width: 0;
+  min-height: 0;
+}
+/* BB's list scroller pads its cards 16px from the left; beside the tree that is a gutter. */
+div[data-diff-plus-tree="side"] > :not(.diff-plus-tree) > * {
+  padding-left: 0.25rem;
+}
+
+.diff-plus-toggle-host {
+  display: contents;
+}
+.diff-plus-toggle {
+  display: inline-flex;
+  width: 1.75rem;
+  height: 1.75rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  color: var(--muted-foreground);
+  transition: background-color 150ms, color 150ms;
+}
+@media (hover: hover) {
+  .diff-plus-toggle:hover {
+    background-color: var(--state-hover);
+    color: var(--foreground);
+    transition-duration: 0ms;
+  }
+}
+.diff-plus-toggle[aria-pressed="true"] {
+  background-color: var(--state-active);
+  color: var(--foreground);
+}
+.diff-plus-toggle:focus-visible {
+  outline: 1px solid var(--ring);
+}
+
+.diff-plus-tree {
+  position: relative;
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  width: var(--diff-plus-tree-width, clamp(11rem, 34%, 18rem));
+  border-right: 1px solid var(--border-seam);
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+.diff-plus-tree-scroll {
+  min-height: 0;
+  flex: 1;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 0.25rem 0.75rem 0.75rem;
+}
+
+div[data-diff-plus-tree="stacked"] > .diff-plus-tree {
+  width: auto;
+  height: 38%;
+  min-height: 9rem;
+  border-right: 0;
+  border-bottom: 1px solid var(--border-seam);
+}
+/*
+ * Above the list, its first card would sit on the tree's border. The gap goes
+ * outside BB's scroller: a file's header sticks below the scroller's padding,
+ * so padding there let the diff scroll by in a strip above the header.
+ */
+div[data-diff-plus-tree="stacked"] > :not(.diff-plus-tree) {
+  margin-top: 0.5rem;
+}
+div[data-diff-plus-tree="stacked"] .diff-plus-tree-scroll {
+  padding: 0 0.75rem 0.5rem;
+}
+div[data-diff-plus-tree="stacked"] .diff-plus-tree-resize {
+  display: none;
+}
+.diff-plus-tree-resize {
+  position: absolute;
+  top: 0;
+  right: -4px;
+  bottom: 0;
+  z-index: 1;
+  width: 7px;
+  cursor: col-resize;
+  touch-action: none;
+}
+.diff-plus-tree-resize:hover,
+.diff-plus-tree-resize:active,
+.diff-plus-tree-resize:focus-visible {
+  outline: none;
+  background: linear-gradient(to right, transparent 3px, var(--ring) 3px, var(--ring) 4px, transparent 4px);
+}
+
+.diff-plus-row {
+  display: flex;
+  align-items: center;
+  border-radius: 6px;
+  color: var(--muted-foreground);
+}
+@media (hover: hover) {
+  .diff-plus-row:hover {
+    background-color: var(--state-hover);
+    color: var(--foreground);
+  }
+}
+.diff-plus-row[data-active] {
+  background-color: var(--state-active);
+  color: var(--foreground);
+}
+.diff-plus-root {
+  margin-bottom: 0.125rem;
+}
+
+/* A folder's icon, as the button that opens and closes it. */
+.diff-plus-twisty {
+  display: inline-flex;
+  width: 1rem;
+  height: 1.5rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  /* The gap a file's icon has to its name inside its button. */
+  margin-right: 0.375rem;
+  border-radius: 4px;
+}
+
+/*
+ * The git letter at the row's right end (a dot on a folder), coloured as VS
+ * Code colours its git decorations: green for new, amber for changed, red for gone.
+ */
+.diff-plus-mark {
+  display: inline-flex;
+  width: 0.5rem;
+  flex-shrink: 0;
+  justify-content: center;
+  /* Closer to the +/- than the row's gap. */
+  margin-left: -0.125rem;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.625rem;
+  font-weight: 600;
+}
+.diff-plus-mark[data-tone="added"] {
+  color: var(--diff-added);
+}
+.diff-plus-mark[data-tone="modified"] {
+  color: var(--warning-text, var(--warning));
+}
+.diff-plus-mark[data-tone="deleted"] {
+  color: var(--diff-removed);
+}
+.diff-plus-dot {
+  width: 0.3125rem;
+  height: 0.3125rem;
+  border-radius: 50%;
+  background-color: currentColor;
+}
+
+.diff-plus-pick {
+  display: flex;
+  min-width: 0;
+  height: 1.5rem;
+  flex: 1;
+  align-items: center;
+  gap: 0.375rem;
+  padding-right: 0.125rem;
+  text-align: left;
+  color: inherit;
+}
+.diff-plus-root .diff-plus-pick {
+  padding-left: 0.25rem;
+}
+.diff-plus-twisty:focus-visible,
+.diff-plus-pick:focus-visible {
+  outline: 1px solid var(--ring);
+  outline-offset: -1px;
+  border-radius: 4px;
+}
+
+/* The image itself comes from its `diff-plus-i-<icon>` class (src/icons.css, generated). */
+.diff-plus-file-icon {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+  background-position: center;
+  background-size: contain;
+  background-repeat: no-repeat;
+}
+
+.diff-plus-name {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.diff-plus-name[data-deleted] {
+  text-decoration: line-through;
+  text-decoration-color: color-mix(in oklab, currentColor 50%, transparent);
+}
+.diff-plus-count {
+  flex-shrink: 0;
+  font-size: 0.6875rem;
+  opacity: 0.7;
+  font-variant-numeric: tabular-nums;
+}
+.diff-plus-stats {
+  display: flex;
+  flex-shrink: 0;
+  gap: 0.1875rem;
+  font-size: 0.6875rem;
+  font-variant-numeric: tabular-nums;
+}
+.diff-plus-added {
+  color: var(--diff-added);
+}
+.diff-plus-removed {
+  color: var(--diff-removed);
+}
+
+.diff-plus-tree-note {
+  padding: 0.5rem 0.25rem;
+  color: var(--muted-foreground);
+}
+.diff-plus-tree-note[role="alert"] {
+  color: var(--destructive);
+}
