@@ -10,7 +10,7 @@ BB's own scroll keeper follows a thread's growth while it streams. When a new ro
 
 For every thread scroller on the page (`[data-page-scroll-viewport]`, one per chat pane, rescanned every second so navigating between threads is covered), the plugin keeps a per-scroller "following" flag. It starts on when the view is at the bottom; a scroll that reaches the bottom turns it back on. While following, a `scroll` event that leaves the view above the bottom with nothing the reader did to explain it schedules a write to the bottom for the next animation frame. The conditions are checked again inside the frame, and one frame is pending per scroller at a time.
 
-"Nothing the reader did" means: no `wheel`, `keydown`, `pointerdown` or touch event in the last 500ms, no mouse button held down over the scroller, no touch in progress. Pointer input is counted anywhere on the page, not only over the scroller, so clicking the pinned-turns bar or a search result before a jump does not make that jump look like a clamp.
+"Nothing the reader did" means: no `wheel`, `keydown`, `pointerdown` or touch event in the last 500ms, no mouse button held down over the scroller, no touch in progress. Keys and pointer input are counted anywhere on the page, not only over the scroller, so clicking the pinned-turns bar or a search result before a jump does not make that jump look like a clamp. Typing or clicking in the composer or a text field does not count: it cannot scroll the thread, and writing a follow-up while a reply streams is exactly when the view needs holding.
 
 The numbers:
 

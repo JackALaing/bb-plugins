@@ -46,6 +46,16 @@ export function setEnabled(value: boolean): void {
   enabled = value;
 }
 
+/** BB's composer, wherever it is (Chat Dock moves it into the right panel). */
+const COMPOSER = "[data-app-composer]";
+
+/** Input aimed at the composer or a text field, which types rather than scrolls the timeline. */
+function cannotScroll(target: EventTarget | null): boolean {
+  if (!(target instanceof Element)) return false;
+  if (target.closest(COMPOSER)) return true;
+  return target instanceof HTMLElement && (target.isContentEditable || target.matches("input, textarea, select"));
+}
+
 /** Pixels between the view's bottom edge and the content's. */
 export function gapOf(s: HTMLElement): number {
   return s.scrollHeight - s.clientHeight - s.scrollTop;
@@ -122,6 +132,8 @@ type Watched = {
   frame: number;
   /** Following the bottom until the reader scrolls away. */
   pinned: boolean;
+  /** Scrolled while switched off: the next scroll only takes stock. */
+  stale: boolean;
   top: number;
   width: number;
   viewport: number;
@@ -145,10 +157,15 @@ export function install(signal: AbortSignal): () => void {
   const noteInput = () => {
     lastInput = performance.now();
   };
-  window.addEventListener("keydown", noteInput, { ...PASSIVE_CAPTURE, signal: sig });
-  // A click can move the scroller without touching it (the pinned-turns bar, a
-  // search result): count it as the reader's, so a jump is not read as a clamp.
-  window.addEventListener("pointerdown", noteInput, { ...PASSIVE_CAPTURE, signal: sig });
+  // Keys and clicks anywhere can move the scroller (Page Down, the pinned-turns
+  // bar, a search result): count them as the reader's, so a jump is not read as a
+  // clamp. Not typing or clicking in the composer or a field, though: a reader
+  // writing a follow-up while the reply streams is exactly when dips happen.
+  const notePageInput = (event: Event) => {
+    if (!cannotScroll(event.target)) noteInput();
+  };
+  window.addEventListener("keydown", notePageInput, { ...PASSIVE_CAPTURE, signal: sig });
+  window.addEventListener("pointerdown", notePageInput, { ...PASSIVE_CAPTURE, signal: sig });
 
   const watched = new Map<HTMLElement, Watched>();
 
@@ -161,6 +178,7 @@ export function install(signal: AbortSignal): () => void {
       frame: 0,
       repairs: [],
       pinned: gapOf(s) <= MIN_GAP,
+      stale: false,
       top: s.scrollTop,
       width: s.clientWidth,
       viewport: s.clientHeight,
@@ -194,7 +212,12 @@ export function install(signal: AbortSignal): () => void {
       // The listener captures, so it also hears every scroll area inside the timeline
       // (code blocks, tables); those do not move the scroller, and reading its layout
       // for them is wasted.
-      if (!enabled || event.target !== s) return;
+      if (event.target !== s) return;
+      // Switched off, nothing is read; the first scroll once it is back on only takes stock.
+      if (!enabled) {
+        w.stale = true;
+        return;
+      }
       const top = s.scrollTop;
       const gap = gapOf(s);
       const width = s.clientWidth;
@@ -209,6 +232,11 @@ export function install(signal: AbortSignal): () => void {
       w.width = width;
       w.viewport = viewport;
       w.height = height;
+      if (w.stale) {
+        w.stale = false;
+        w.pinned = gap <= MIN_GAP;
+        return;
+      }
       if (w.frame) return;
       const decision = nextState({ gap, pinned: w.pinned, quiet: quiet(), layoutChanged, viewport, moved });
       w.pinned = decision.pinned;
