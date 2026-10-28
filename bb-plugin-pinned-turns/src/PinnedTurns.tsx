@@ -258,12 +258,11 @@ export function PinnedTurns({ threadId }: { threadId: string }) {
 /** BB's message bubble ink, made opaque: `--surface-recessed` is translucent and lets the text beneath through. */
 const MESSAGE_INK = "var(--surface-recessed-solid)";
 /**
- * The reply is the darker of the two, in either theme. In the light theme that is
- * more foreground mixed into the background than the bubble has; in the dark theme
- * it is less, so it sits between the chat background and the bubble.
+ * The reply has no bubble in the timeline, so its half sits between the chat
+ * background and the bubble in either theme: less foreground mixed in than the
+ * bubble's 6%.
  */
-const REPLY_INK =
-  "light-dark(color-mix(in oklab, var(--foreground) 10%, var(--background)), color-mix(in oklab, var(--foreground) 3%, var(--background)))";
+const REPLY_INK = "color-mix(in oklab, var(--foreground) 3%, var(--background))";
 
 /** A mark for a turn that ended badly. A running turn is shown by pulsing the text instead. */
 const STATUS_DOT: Record<Exclude<TurnStatus, "pending">, { color: string; label: string }> = {
