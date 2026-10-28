@@ -168,8 +168,9 @@ export function PinnedTurns({ threadId }: { threadId: string }) {
     const l = live.current;
     if (!l.timeline) return;
     const mine = ++l.jump;
-    const stop = () => {
-      if (l.jump === mine) l.jump++;
+    // Only the reader's own input ends it, not the wheel events the jump sends itself.
+    const stop = (event: Event) => {
+      if (event.isTrusted && l.jump === mine) l.jump++;
     };
     const inputs = ["wheel", "touchstart", "pointerdown", "keydown"] as const;
     for (const name of inputs) window.addEventListener(name, stop, { capture: true, passive: true });
@@ -214,6 +215,10 @@ export function PinnedTurns({ threadId }: { threadId: string }) {
           step = Math.sign(target.rank - here) * scroller.clientHeight * 0.8;
         }
         const before = scroller.scrollTop;
+        // BB's scroll keeper (0.48) writes a scroll it cannot explain back to the
+        // bottom while it is attached there; a wheel event on the scroller marks the
+        // next 150ms as the reader's input, so it follows the jump and detaches.
+        scroller.dispatchEvent(new WheelEvent("wheel", { bubbles: true }));
         scroller.scrollTop += step;
         // At the edge of the page the row cannot be brought any nearer (the first message sits under the bar).
         if (scroller.scrollTop === before && ++stuck >= 4) {

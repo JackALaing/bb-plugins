@@ -1,7 +1,8 @@
 import type { useSdk } from "@get-bb/plugin-sdk/app";
 import { oneLine, turnStatus, type Message, type SpanEvent } from "./model.ts";
 
-type Page = Awaited<ReturnType<ReturnType<typeof useSdk>["threads"]["timeline"]>>;
+// `timeline` is overloaded; a read without `afterTag` is a full page, never a delta.
+type Page = Extract<Awaited<ReturnType<ReturnType<typeof useSdk>["threads"]["timeline"]>>, { rows: readonly unknown[] }>;
 export type Row = Page["rows"][number];
 type OutlineItem = Awaited<ReturnType<ReturnType<typeof useSdk>["threads"]["conversationOutline"]>>["items"][number];
 

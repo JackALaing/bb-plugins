@@ -11,7 +11,7 @@ const roomListeners = new Set<() => void>();
 
 /**
  * Whether the thread view is wide enough for the counter. The bar, which measures the
- * scroller, reports it here so the header menu can grey the option out when it
+ * scroller, reports it here so the thread menu can grey the option out when it
  * cannot apply; both live in the one bundle, so a module variable is the channel.
  */
 export function setCounterRoom(next: boolean) {

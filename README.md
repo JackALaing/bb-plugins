@@ -15,7 +15,7 @@ Plugins for [BB](https://getbb.app), one folder each.
 
 ![The bar pinned at the top of a long thread, naming the reply and the question, with the turn counter](docs/screenshots/pinned-turns-bar.png)
 
-![The pin button's menu](docs/screenshots/pinned-turns-menu.png)
+![The Pinned turns submenu in the thread's actions menu](docs/screenshots/pinned-turns-menu.png)
 
 **Chat Dock**
 

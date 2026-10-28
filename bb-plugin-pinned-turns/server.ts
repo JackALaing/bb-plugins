@@ -7,7 +7,7 @@
 import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
 import { z } from "zod";
 
-/** The boolean settings the header menu switches. */
+/** The boolean settings the thread menu switches. */
 export const SETTING_KEYS = ["enabled", "showStatus", "showPosition", "showFullText", "debugLog", "showPinButton"] as const;
 export type SettingKey = (typeof SETTING_KEYS)[number];
 
@@ -45,8 +45,8 @@ export default async function plugin(bb: BbPluginApi) {
     },
     showPinButton: {
       type: "boolean",
-      label: "Show the pin button",
-      description: "The thread header button that opens the Pinned Turns menu. Switch this back on here if you hid it.",
+      label: "Show in thread menus",
+      description: "The Pinned turns submenu in each thread's actions menu, where the bar and its options are switched.",
       default: true,
     },
     debugLog: {

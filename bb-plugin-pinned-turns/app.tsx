@@ -5,9 +5,9 @@
 // load time, never bundled.
 import { useEffect, useState } from "react";
 import { definePluginApp, useBbContext } from "@get-bb/plugin-sdk/app";
-import { HeaderMenu } from "./src/HeaderMenu";
 import { useOptions } from "./src/options";
 import { PinnedTurns } from "./src/PinnedTurns";
+import { threadMenu } from "./src/ThreadMenu";
 import "./src/styles.css";
 
 /** The longest a thread waits for an idle moment before its bar is mounted anyway. */
@@ -62,5 +62,5 @@ function Overlay() {
 
 export default definePluginApp((app) => {
   app.slots.experimental_appOverlay({ id: "pinned-turns", component: Overlay });
-  app.slots.experimental_threadHeaderAction({ id: "toggle", title: "Pinned turns", component: HeaderMenu });
+  app.slots.experimental_threadAction(threadMenu);
 });
