@@ -5,7 +5,7 @@ import type { rpcContract } from "../server";
 import { findTimeline, mountedRows, prefersReducedMotion, rankOfRow, rowById, type Timeline } from "./dom";
 import { PIN_ROW_HEIGHT, bandAt, jumpOffset, lastAtOrAbove, type Message, type TurnStatus } from "./model";
 import { useOptions } from "./options";
-import { useTimeline, type Debug, type TimelineIndex } from "./timeline";
+import { useOutline, useTimeline, type Debug, type TimelineIndex } from "./timeline";
 import { COUNTER_ROOM, setCounterRoom, useCounterRoom } from "./viewport";
 
 /**
@@ -16,7 +16,7 @@ const LANDING = PIN_ROW_HEIGHT;
 /** The corner radius of BB's own message bubble; the bar lifts its top corners by this much. */
 const RADIUS = 12;
 /**
- * The timeline column's own side padding (`px-4`): the bar is exactly as wide as the
+ * The timeline column's own 16px side padding: the bar is exactly as wide as the
  * text, so it lines up with it at every window width. BB's TOC strip sits at the
  * vertical middle of the right edge, not at the top, so it does not meet the bar.
  */
@@ -31,12 +31,18 @@ const NONE: Shown = { message: null, reply: null };
 const sameMessage = (a: Message | null, b: Message | null) =>
   a === b || (a?.id === b?.id && a?.title === b?.title && a?.full === b?.full && a?.status === b?.status && a?.ordinal === b?.ordinal);
 
+/** The newest user message held, whose change is what can change the turn count. */
+function newestUser(index: TimelineIndex): string | undefined {
+  for (let i = index.messages.length - 1; i >= 0; i--) if (index.messages[i]!.role === "user") return index.messages[i]!.id;
+  return undefined;
+}
+
 const nextFrame = () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 
 /**
- * The bar. It is a zero-height sticky row, the first child of the scroller's
+ * The bar. It is a zero-height row stuck to the top, the first child of the scroller's
  * frame, so the timeline's layout and scroll height do not change; the rows are
- * never made sticky (they would pile up). One paint per animation frame, driven
+ * never stuck there (they would pile up). One paint per animation frame, driven
  * by scroll and by the items resizing: nothing polls.
  */
 export function PinnedTurns({ threadId }: { threadId: string }) {
@@ -94,11 +100,8 @@ export function PinnedTurns({ threadId }: { threadId: string }) {
     schedule();
   }, [index, schedule]);
 
-  // "7/23" needs every message, so while it is shown the older pages are fetched in turn.
   const counter = options.showPosition && roomForCounter;
-  useEffect(() => {
-    if (counter && index.hasOlder) loadOlder();
-  }, [counter, index, loadOlder]);
+  const outline = useOutline(threadId, counter, newestUser(index));
 
   // Park the row in the scroller and keep it parked. The scroller can be rebuilt
   // under a thread (a layout change), so a cheap check re-attaches when it is gone.
@@ -228,24 +231,24 @@ export function PinnedTurns({ threadId }: { threadId: string }) {
   };
 
   if (!host) return null;
-  const total = counter && !index.hasOlder ? index.userTotal : 0;
+  const ordinal = shown.message && outline?.ordinals.get(shown.message.id);
   return createPortal(
     // The message is the reader's own bubble, so it sits right at its own width; the
     // reply takes every pixel it leaves. Nothing is measured to keep them apart.
     <div
-      className="flex items-start gap-2"
+      className="pinned-bar"
       style={{ margin: "0 auto", maxWidth: `min(728px, calc(100% - ${SIDE_ROOM * 2}px))` }}
     >
-      <Half message={shown.reply} onJump={jump} className="min-w-0 flex-1" ink={REPLY_INK} status={options.showStatus} tooltip={options.showFullText} />
+      <Half message={shown.reply} onJump={jump} className="pinned-half--reply" ink={REPLY_INK} status={options.showStatus} tooltip={options.showFullText} />
       <Half
         message={shown.message}
         onJump={jump}
-        className="ml-auto max-w-[70%] flex-none"
+        className="pinned-half--message"
         glide
         ink={MESSAGE_INK}
         status={options.showStatus}
         tooltip={options.showFullText}
-        position={total > 0 && shown.message?.ordinal ? { ordinal: shown.message.ordinal, total } : undefined}
+        position={outline && ordinal ? { ordinal, total: outline.total } : undefined}
       />
     </div>,
     host,
@@ -356,7 +359,8 @@ function Half({
   return (
     <div
       ref={box}
-      className={`${className} relative transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none ${message ? "" : "pointer-events-none -translate-y-full opacity-0"}`}
+      className={`pinned-half ${className}`}
+      data-empty={message ? undefined : ""}
       style={{ pointerEvents: message ? "auto" : "none" }}
     >
       <button
@@ -368,20 +372,20 @@ function Half({
         // Lifted by its own radius so the top corners sit above the scroller's edge
         // and the bar reads as hanging from it; the top padding is the lift plus a
         // small gap, so hiding the corners costs no visible space.
-        className="flex w-full max-w-full cursor-pointer items-center gap-2 rounded-xl border border-border-seam px-4 pb-2.5 text-left text-sm leading-relaxed text-foreground shadow-[0_8px_20px_-8px_rgba(0,0,0,.35)] transition-[transform,box-shadow] duration-100 ease-out hover:-translate-y-0.5 hover:shadow-[0_10px_22px_-8px_rgba(0,0,0,.5)] focus-visible:-translate-y-0.5 focus-visible:shadow-[0_10px_22px_-8px_rgba(0,0,0,.5)] active:translate-y-px active:shadow-none"
+        className="pinned-button"
         style={{ background: ink, marginTop: -RADIUS, paddingTop: RADIUS + 5 }}
       >
         {dot ? (
           <span
             title={dot.label}
             aria-hidden
-            className="h-2 w-2 shrink-0 rounded-full"
+            className="pinned-dot"
             style={{ background: dot.color }}
           />
         ) : null}
-        {/* The ellipsis needs a block of its own: a button's content box does not clip with one. */}
         <span
-          className={`block min-w-0 truncate ${running ? "animate-pulse motion-reduce:animate-none" : ""}`}
+          className="pinned-text"
+          data-running={running ? "" : undefined}
           // Only when the bar cut the text short; a native tooltip on a whole line is noise.
           onMouseEnter={(event) => {
             const el = event.currentTarget;
@@ -399,11 +403,11 @@ function Half({
         // inside it, so the two share a baseline.
         <span
           aria-hidden
-          className="pointer-events-none absolute whitespace-nowrap text-sm leading-relaxed tabular-nums text-foreground"
+          className="pinned-position"
           style={{ left: "100%", marginLeft: 10, top: 6, opacity: 0.33 }}
         >
           <span style={{ fontSize: "90%" }}>
-            <span className="font-semibold">{position.ordinal}</span>/{position.total}
+            <b>{position.ordinal}</b>/{position.total}
           </span>
         </span>
       ) : null}

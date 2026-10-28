@@ -34,7 +34,7 @@ export default async function plugin(bb: BbPluginApi) {
     showPosition: {
       type: "boolean",
       label: "Show turn counter",
-      description: "Which of the thread's turns the pinned message is, like 7/23. Loads the whole thread.",
+      description: "Which of the thread's turns the pinned message is, like 7/23.",
       default: true,
     },
     showFullText: {

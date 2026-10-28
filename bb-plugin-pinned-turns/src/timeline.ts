@@ -169,3 +169,42 @@ export function useTimeline(threadId: string, debug: Debug) {
   const loadOlder = useCallback(() => older.current(), []);
   return { index, loadOlder };
 }
+
+/** Where each user message stands in the thread ("7" of "7/23"), by row id. */
+export interface Outline {
+  ordinals: ReadonlyMap<string, number>;
+  total: number;
+}
+
+/**
+ * The thread's user messages in order, for the turn counter. BB's conversation
+ * outline lists every one of them by the timeline's row id in one small response
+ * (a few KB, against ~100KB a timeline page), so the counter does not need the
+ * older pages fetched. It is fetched again when the newest user message changes,
+ * which is the only time the count can.
+ */
+export function useOutline(threadId: string, enabled: boolean, newestUser: string | undefined): Outline | null {
+  const sdk = useSdk();
+  const [outline, setOutline] = useState<Outline | null>(null);
+  useEffect(() => {
+    // Not before the timeline's first page: the outline is fetched once it can be read against it.
+    if (!enabled || newestUser === undefined) return;
+    const controller = new AbortController();
+    let timer = 0;
+    const load = async () => {
+      try {
+        const { items } = await sdk.threads.conversationOutline({ threadId, role: "user", signal: controller.signal });
+        if (controller.signal.aborted) return;
+        setOutline({ ordinals: new Map(items.map((item, i) => [item.id, i + 1])), total: items.length });
+      } catch {
+        if (!controller.signal.aborted) timer = window.setTimeout(load, RETRY_MS);
+      }
+    };
+    load();
+    return () => {
+      controller.abort();
+      window.clearTimeout(timer);
+    };
+  }, [sdk, threadId, enabled, newestUser]);
+  return enabled ? outline : null;
+}
