@@ -1,7 +1,6 @@
 // The two rules that decide what the bar says and where a jump lands. Nothing
 // here touches the DOM, so both are decided from plain numbers and can be
-// checked without a browser. Copied from dsh-chatux src/model.ts (bandContent,
-// jumpOffset) with their checks.
+// checked without a browser.
 
 /** The bar's reserved height, in px: the room a jumped-to row is landed below. */
 export const PIN_ROW_HEIGHT = 48;
