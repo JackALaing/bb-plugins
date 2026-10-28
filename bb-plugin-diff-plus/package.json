@@ -1,6 +1,12 @@
 {
   "name": "bb-plugin-diff-plus",
   "version": "0.1.0",
+  "license": "MIT AND CC-BY-SA-4.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nfour/bb-plugins.git",
+    "directory": "bb-plugin-diff-plus"
+  },
   "type": "module",
   "private": true,
   "engines": {

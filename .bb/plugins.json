@@ -1,0 +1,11 @@
+{
+  "$schema": "https://getbb.app/schemas/plugins.schema.json",
+  "schemaVersion": 1,
+  "name": "nfour-bb-plugins",
+  "plugins": [
+    { "name": "pinned-turns", "source": "./bb-plugin-pinned-turns" },
+    { "name": "chat-dock", "source": "./bb-plugin-chat-dock" },
+    { "name": "diff-plus", "source": "./bb-plugin-diff-plus" },
+    { "name": "stay-at-bottom", "source": "./bb-plugin-stay-at-bottom" }
+  ]
+}
