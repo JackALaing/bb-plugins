@@ -2,6 +2,10 @@
 
 A BB plugin. While you scroll a thread's timeline it pins a bar at the top showing the user message you are reading under and the latest agent reply. Click either half to jump to that message.
 
+![The bar pinned at the top of a long thread, naming the reply and the question, with the turn counter](https://raw.githubusercontent.com/nfour/bb-plugins/master/docs/screenshots/pinned-turns-bar.png)
+
+![The pin button's menu](https://raw.githubusercontent.com/nfour/bb-plugins/master/docs/screenshots/pinned-turns-menu.png)
+
 Click the pin button in the thread header for the menu:
 
 - **Pin the current turn**: the on/off switch.

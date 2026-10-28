@@ -4,6 +4,8 @@ A BB plugin. It adds what the Diff Tree plugin offered and BB's own Diff tab lac
 
 - **Folder tree.** A folder button in the Diff tab's toolbar shows the changed files as a tree beside the list, with counts and +/- per folder. A click on a folder's icon opens or closes it; a click on its name filters BB's list to `folder/**` through BB's own filter box; a click on a file filters to it and opens its card. Files and folders carry VS Code's vscode-icons glyphs and, at the right, VS Code's git letters (a dot on folders). The tree's right edge drags to change its width; in a tab narrower than 600px the tree goes above the list instead, as Diff Tree's did.
 
+![The folder tree beside the file list in BB's Diff tab, one folder picked](https://raw.githubusercontent.com/nfour/bb-plugins/master/docs/screenshots/diff-plus-tree.png)
+
 Quoting selected lines needs no plugin: BB's diff has its own "Add to chat" (the "+" beside a line, or a click on one line number and a Shift-click on another).
 
 ## Why

@@ -9,6 +9,24 @@ Plugins for [BB](https://getbb.app), one folder each.
 | [Diff Plus](bb-plugin-diff-plus) | Adds a folder tree with per-folder counts and +/- to BB's Diff tab. |
 | [Stay at bottom](bb-plugin-stay-at-bottom) | Keeps a streaming thread scrolled to its bottom when BB's own keeper slips. |
 
+## Screenshots
+
+**Pinned Turns**
+
+![The bar pinned at the top of a long thread, naming the reply and the question, with the turn counter](docs/screenshots/pinned-turns-bar.png)
+
+![The pin button's menu](docs/screenshots/pinned-turns-menu.png)
+
+**Chat Dock**
+
+![The composer docked at the bottom of the right panel, under the Info tab](docs/screenshots/chat-dock-strip.png)
+
+![The dock button's menu](docs/screenshots/chat-dock-menu.png)
+
+**Diff Plus**
+
+![The folder tree beside the file list in BB's Diff tab, one folder picked](docs/screenshots/diff-plus-tree.png)
+
 ## Install
 
 From the BB plugin marketplace, or from this repository (each plugin is tagged `<id>/vX.Y.Z`):

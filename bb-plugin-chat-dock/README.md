@@ -2,6 +2,10 @@
 
 A BB plugin. While a thread's right panel is open, it moves the composer, the cards above it (running commands, child threads, questions) and the chips under it out of the chat column and into the panel, so the timeline keeps its width.
 
+![The composer docked at the bottom of the right panel, under the Info tab](https://raw.githubusercontent.com/nfour/bb-plugins/master/docs/screenshots/chat-dock-strip.png)
+
+![The dock button's menu](https://raw.githubusercontent.com/nfour/bb-plugins/master/docs/screenshots/chat-dock-menu.png)
+
 Two ways to hold it, from the dock button in the composer's action row (beside the microphone):
 
 - **Keep it at the panel's bottom** (the default): a strip under whichever tab is open, so the composer never goes away while the panel is open. The open tab shrinks to make room; nothing is covered.
