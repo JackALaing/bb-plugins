@@ -7,7 +7,7 @@ import { useOptions } from "./options";
  * The body of the Chat tab. While it is mounted (the tab is the active one in its
  * pane) it holds the chat column's composer shell at its bottom; on unmount, or
  * while the right panel is collapsed, the shell goes back to the column, so a
- * hidden panel means the default layout. Locked, the strip holds the shell
+ * closed panel means the default layout. Locked, the strip holds the shell
  * instead and the tab is not offered, but a tab already open stays out of the way.
  */
 export function Dock({ threadId }: { threadId: string }) {
@@ -33,7 +33,7 @@ export function Dock({ threadId }: { threadId: string }) {
     // change), which leaves the marker behind and a fresh shell in the column.
     const check = () => {
       if (restore && !holdsShell(slot)) undock("shell replaced");
-      if (where && panelHidden(where)) return undock("panel hidden");
+      if (where && panelHidden(where)) return undock("panel closed");
       if (restore) return;
       const shell = findShell(threadId);
       if (!shell) return;
@@ -65,9 +65,9 @@ export function Dock({ threadId }: { threadId: string }) {
   }, [threadId, locked, log]);
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
-      <div className="min-h-0 flex-1" />
-      <div ref={host} data-chat-dock-host="tab" className="shrink-0 px-3 pb-3" />
+    <div className="chat-dock-tab">
+      <div className="chat-dock-tab-space" />
+      <div ref={host} data-chat-dock-host="tab" className="chat-dock-tab-host" />
     </div>
   );
 }

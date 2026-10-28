@@ -26,9 +26,10 @@ export function DockButton() {
       // No focus on click: focus inside the composer expands it too.
       onMouseDown={(event) => event.preventDefault()}
       onClick={(event) => setMenu({ open: !open, anchor: event.currentTarget.getBoundingClientRect() })}
-      className={`flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-surface-recessed hover:text-foreground aria-expanded:bg-surface-recessed ${enabled ? "" : "opacity-60"}`}
+      className="chat-dock-button"
+      data-off={enabled ? undefined : ""}
     >
-      <Icon name={DOCK_ICON} fallback="PanelRight" className="h-4 w-4" aria-hidden />
+      <Icon name={DOCK_ICON} fallback="PanelRight" className="chat-dock-icon" aria-hidden />
     </button>
   );
 }

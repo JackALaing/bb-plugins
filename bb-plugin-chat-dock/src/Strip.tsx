@@ -6,7 +6,7 @@ import { useOptions } from "./options";
 
 /**
  * Locked mode. For every chat pane on the page whose right panel is open, a host
- * is appended to the panel's flex column under the tab body (in flow, so the open
+ * is appended to the panel's column under the tab body (in flow, so the open
  * tab shrinks rather than being covered) and the pane's composer shell moves into
  * it. A collapsed panel, the lock switched off, or leaving the thread puts the
  * shell back. Nothing renders through React: BB owns every element involved.
@@ -65,7 +65,7 @@ export function Strip() {
       for (const { root, shell, panel } of panes) {
         const entry = held.get(root);
         if (!panel || panelHidden(panel)) {
-          if (entry) release(root, "panel hidden");
+          if (entry) release(root, "panel closed");
         } else if (entry && shell) {
           // The pane offers a shell in its column while the host holds one: the
           // thread changed under the panel. The held shell is stale and is dropped.

@@ -4,7 +4,7 @@
  * A thread page is a horizontal split: `#thread-detail-timeline-panel` (the chat
  * column) beside `#thread-detail-secondary-panel` (the right panel), both under
  * one `[data-split-resize-grid-root]`; a split view has one such root per chat
- * pane. The chat column's scroller ends in a sticky footer holding the "Scroll
+ * pane. The chat column's scroller ends in a footer stuck to its bottom holding the "Scroll
  * to latest" button and the composer shell, `[data-app-composer]`, which holds
  * the cards above the box (running commands, child threads, questions), the
  * context row (changed files, merge base), the box itself and the chips under
@@ -20,7 +20,7 @@ export interface Panel {
   /** The split panel, or the drawer on a narrow viewport. */
   panel: HTMLElement;
   aside: HTMLElement;
-  /** The aside's flex column: the tab strip, then the tab body. A strip appended here sits under the body. */
+  /** The aside's column: the tab strip, then the tab body. A strip appended here sits under the body. */
   column: HTMLElement;
 }
 
@@ -126,7 +126,7 @@ export function observePage(onChange: () => void): () => void {
 export function createStripHost(): HTMLElement {
   const host = document.createElement("div");
   host.dataset.chatDockHost = "strip";
-  host.className = "shrink-0 border-t border-border-seam px-3 pb-3 pt-2";
+  host.className = "chat-dock-strip";
   return host;
 }
 

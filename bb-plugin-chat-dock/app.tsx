@@ -11,6 +11,7 @@ import { DockMenu } from "./src/DockMenu";
 import { DOCK_ICON, DockIcon } from "./src/icons";
 import { useOptions } from "./src/options";
 import { Strip } from "./src/Strip";
+import "./src/styles.css";
 
 export default definePluginApp((app) => {
   app.experimental_icons.register({ name: DOCK_ICON, component: DockIcon });

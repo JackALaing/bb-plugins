@@ -73,7 +73,7 @@ export function DockMenu() {
           }}
           // The anchor cannot take focus, and focusing the button would expand the composer.
           onCloseAutoFocus={(event) => event.preventDefault()}
-          className="z-50 min-w-[16rem] rounded-lg border border-border-seam bg-background p-1 text-sm text-foreground shadow-lg outline-none"
+          className="chat-dock-menu"
         >
           <Row checked={on} onChange={(next) => set("enabled", next)} label="Dock the composer in the right panel" hint="While the panel is open" closes />
           <Row
@@ -83,7 +83,7 @@ export function DockMenu() {
             hint="Under whichever tab is open; off, a Chat tab of its own"
             disabled={!on}
           />
-          <Menu.Separator className="my-1 h-px bg-border-seam" />
+          <Menu.Separator className="chat-dock-separator" />
           <Row checked={value("debugLog")} onChange={(next) => set("debugLog", next)} label="Debug log" hint="bb plugin logs chat-dock" />
           <Row
             checked={value("showButton")}
@@ -91,13 +91,13 @@ export function DockMenu() {
             label="Show this button"
             hint="Hidden, it comes back in the plugin's settings"
           />
-          <Menu.Separator className="my-1 h-px bg-border-seam" />
+          <Menu.Separator className="chat-dock-separator" />
           <Menu.Item
             onSelect={() => openSettings(pluginId)}
-            className="relative flex cursor-pointer select-none items-center gap-2 rounded-md py-1.5 pl-8 pr-3 outline-none data-[highlighted]:bg-surface-recessed"
+            className="chat-dock-item"
           >
-            <span className="absolute left-2.5 flex h-4 w-4 items-center justify-center">
-              <Icon name="Settings" fallback="PanelRight" className="h-4 w-4" aria-hidden />
+            <span className="chat-dock-item-mark">
+              <Icon name="Settings" fallback="PanelRight" className="chat-dock-icon" aria-hidden />
             </span>
             Plugin settings
           </Menu.Item>
@@ -132,15 +132,15 @@ function Row({
       onSelect={(event) => {
         if (!closes) event.preventDefault();
       }}
-      className="relative flex cursor-pointer select-none flex-col rounded-md py-1.5 pl-8 pr-3 outline-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[highlighted]:bg-surface-recessed"
+      className="chat-dock-item chat-dock-item--switch"
     >
-      <span className="absolute left-2.5 top-2 flex h-4 w-4 items-center justify-center">
+      <span className="chat-dock-item-mark">
         <Menu.ItemIndicator>
-          <Icon name="Check" className="h-4 w-4" aria-hidden />
+          <Icon name="Check" className="chat-dock-icon" aria-hidden />
         </Menu.ItemIndicator>
       </span>
       <span>{label}</span>
-      {hint ? <span className="text-xs text-muted-foreground">{hint}</span> : null}
+      {hint ? <span className="chat-dock-hint">{hint}</span> : null}
     </Menu.CheckboxItem>
   );
 }
