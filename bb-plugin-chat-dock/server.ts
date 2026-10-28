@@ -25,8 +25,8 @@ export default async function plugin(bb: BbPluginApi) {
   const settings = bb.settings.define({
     enabled: {
       type: "boolean",
-      label: "Show the Chat tab",
-      description: "A tab in the thread's right panel that holds the composer and the cards above it while it is open.",
+      label: "Dock the composer in the right panel",
+      description: "While the panel is open, the composer and the cards above it move into it: as a strip at the panel's bottom, or as a Chat tab.",
       default: true,
     },
     locked: {

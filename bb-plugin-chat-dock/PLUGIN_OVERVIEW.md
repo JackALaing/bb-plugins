@@ -20,7 +20,7 @@ The dock button in the composer's action row switches between the two. Switching
 
 ## Settings
 
-Each option is a plugin setting: the Chat tab, the bottom strip, the dock button itself and a debug log. A button you hide from its own menu comes back from the plugin's page in BB settings.
+Each option is a plugin setting: docking itself, the strip or the Chat tab, the dock button and a debug log. A button you hide from its own menu comes back from the plugin's page in BB settings.
 
 ## Requirements
 
