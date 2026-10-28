@@ -20,4 +20,4 @@ There are no plugin settings. To go back to BB's plain diffs, disable the plugin
 
 ## Where the files come from
 
-The tree asks `sdk.environments.diffFiles` for the scope the tab shows (the environment's merge base branch, or its default branch, for "All changes" and "Committed changes"), only while a tree is on, and again a second after the environment reports a git change. A failed fetch is retried every 3 seconds.
+The tree asks BB's Git plugin (`bb--git` `files`, through the plugin's backend) for the scope the tab shows (the environment's merge base branch, or its default branch, for "All changes" and "Committed changes"), only while a tree is on, and again a second after the environment reports a git change. A failed fetch is retried every 3 seconds.

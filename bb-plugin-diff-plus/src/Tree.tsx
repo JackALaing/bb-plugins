@@ -6,12 +6,13 @@
 // folder types `folder/**` into BB's own filter box; a click on a file types its
 // path and opens its card. The list, its diffs and its filtering stay BB's.
 //
-// The files come from `sdk.environments.diffFiles` for the scope the tab shows,
+// The files come from the Git plugin's `files` read (through server.ts) for the scope the tab shows,
 // fetched only while a tree is on, and again when the environment's git state
 // changes. Nothing here reads the composer, so typing never re-renders the tree.
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
-import { experimental_Icon as Icon, useBbContext, useSdk } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon, useBbContext, useRpc, useSdk } from "@get-bb/plugin-sdk/app";
+import type { rpcContract } from "../server";
 import {
   expandFile,
   filterValue,
@@ -286,6 +287,7 @@ type Files =
 
 function useChangedFiles(threadId: string | null, scope: Scope | null): Files {
   const sdk = useSdk();
+  const rpc = useRpc<typeof rpcContract>();
   const [files, setFiles] = useState<Files>({ status: "loading" });
   const scopeKey = scope ? JSON.stringify(scope) : null;
   useEffect(() => {
@@ -315,14 +317,16 @@ function useChangedFiles(threadId: string | null, scope: Scope | null): Files {
         }
         const environment = await sdk.environments.get({ environmentId, signal });
         const base = environment.mergeBaseBranch ?? environment.defaultBranch;
-        const query =
+        const target =
           scope.target === "all" || scope.target === "branch_committed"
             ? base
-              ? { target: scope.target, mergeBaseBranch: base }
+              ? { type: scope.target, mergeBaseBranch: base }
               : null
-            : scope;
-        if (!query) throw new Error("This environment has no base branch to compare with.");
-        const result = await sdk.environments.diffFiles({ environmentId, ...query, signal });
+            : scope.target === "commit"
+              ? { type: scope.target, sha: scope.sha }
+              : { type: scope.target };
+        if (!target) throw new Error("This environment has no base branch to compare with.");
+        const result = await rpc.call("files", { environmentId, target });
         if (disposed || signal.aborted) return;
         if (result.outcome !== "available") {
           setFiles({ status: "error", message: result.outcome === "unavailable" ? result.failure.message : result.message });
@@ -356,7 +360,7 @@ function useChangedFiles(threadId: string | null, scope: Scope | null): Files {
       clearTimeout(timer);
       unsubscribe?.();
     };
-  }, [sdk, threadId, scopeKey]); // scopeKey stands for scope
+  }, [sdk, rpc, threadId, scopeKey]); // scopeKey stands for scope
   return files;
 }
 

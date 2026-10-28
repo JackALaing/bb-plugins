@@ -130,7 +130,7 @@ export function initialOpen(root: TreeDir, budget = 40): Set<string> {
   return open;
 }
 
-/** What BB's Diff tab is showing, as `sdk.environments.diffFiles` takes it. */
+/** What BB's Diff tab is showing, as the Git plugin's `files` read takes it (see server.ts). */
 export type Scope =
   | { target: "all" }
   | { target: "branch_committed" }

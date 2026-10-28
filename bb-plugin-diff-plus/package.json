@@ -1,6 +1,6 @@
 {
   "name": "bb-plugin-diff-plus",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "license": "MIT AND CC-BY-SA-4.0",
   "repository": {
     "type": "git",
@@ -10,8 +10,8 @@
   "type": "module",
   "private": true,
   "engines": {
-    "bb": ">=0.47",
-    "bbPluginSdk": ">=0.6.79"
+    "bb": ">=0.48",
+    "bbPluginSdk": ">=0.6.94"
   },
   "scripts": {
     "build": "bb plugin build",
@@ -32,8 +32,11 @@
       "skills"
     ]
   },
+  "dependencies": {
+    "zod": "^4.6.7"
+  },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.79",
+    "@get-bb/plugin-sdk": "0.6.94",
     "@types/node": "^22.20.5",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
