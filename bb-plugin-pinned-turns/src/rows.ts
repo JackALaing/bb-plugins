@@ -3,6 +3,7 @@ import { oneLine, turnStatus, type Message, type SpanEvent } from "./model.ts";
 
 type Page = Awaited<ReturnType<ReturnType<typeof useSdk>["threads"]["timeline"]>>;
 export type Row = Page["rows"][number];
+type OutlineItem = Awaited<ReturnType<ReturnType<typeof useSdk>["threads"]["conversationOutline"]>>["items"][number];
 
 /** The thread's rows in order, and what is known about them. Rebuilt, never mutated. */
 export interface TimelineIndex {
@@ -11,8 +12,6 @@ export interface TimelineIndex {
   messages: readonly Message[];
   /** Whether older rows than the ones held exist and are not fetched yet. */
   hasOlder: boolean;
-  /** How many user messages the thread holds so far; complete only when `hasOlder` is false. */
-  userTotal: number;
 }
 
 /** The rows of a page in order, with a turn's children flattened in after it. */
@@ -96,7 +95,6 @@ export function indexOf(rows: readonly Row[], hasOlder: boolean): TimelineIndex 
     replies = [];
     asked = null;
   };
-  let userTotal = 0;
   rows.forEach((row, i) => {
     rank.set(row.id, i);
     if (row.kind !== "conversation") {
@@ -119,13 +117,29 @@ export function indexOf(rows: readonly Row[], hasOlder: boolean): TimelineIndex 
       full,
       by: row.role === "user" && row.initiator === "system" ? "system" : "user",
     };
-    if (row.role === "user") {
-      message.ordinal = ++userTotal;
-      asked = message;
-    } else replies.push(message);
+    if (row.role === "user") asked = message;
+    else replies.push(message);
     messages.push(message);
   });
   close();
-  return { rank, messages, hasOlder, userTotal };
+  return { rank, messages, hasOlder };
 }
 
+/** Where each user message stands in the thread ("7" of "7/23"), by row id. */
+export interface Outline {
+  ordinals: ReadonlyMap<string, number>;
+  total: number;
+}
+
+/**
+ * How a message another agent sent (`bb thread tell`) begins. The outline has no
+ * `initiator`, so this is how its items are told apart; BB itself marks such a
+ * user row `initiator: "agent"` by the same pattern.
+ */
+const AGENT_ENVELOPE = /^\[bb message from thread:[^;\]\s]+(?:;[^\]]*)?\]/;
+
+/** The turn counter from BB's conversation outline, counting the messages the bar names: not another agent's, not an empty one. */
+export function outlineOf(items: readonly Pick<OutlineItem, "id" | "preview" | "attachmentSummary">[]): Outline {
+  const counted = items.filter((item) => !AGENT_ENVELOPE.test(item.preview) && (item.preview !== "" || item.attachmentSummary));
+  return { ordinals: new Map(counted.map((item, i) => [item.id, i + 1])), total: counted.length };
+}

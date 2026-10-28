@@ -29,7 +29,7 @@ interface Shown {
 const NONE: Shown = { message: null, reply: null };
 
 const sameMessage = (a: Message | null, b: Message | null) =>
-  a === b || (a?.id === b?.id && a?.title === b?.title && a?.full === b?.full && a?.status === b?.status && a?.ordinal === b?.ordinal);
+  a === b || (a?.id === b?.id && a?.title === b?.title && a?.full === b?.full && a?.status === b?.status);
 
 /** The newest user message held, whose change is what can change the turn count. */
 function newestUser(index: TimelineIndex): string | undefined {

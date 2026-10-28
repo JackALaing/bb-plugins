@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { rankOfRow } from "./dom.ts";
-import { flatten, indexOf, mergeNewest, prependOlder } from "./rows.ts";
+import { flatten, indexOf, mergeNewest, outlineOf, prependOlder } from "./rows.ts";
 import { PIN_ROW_HEIGHT, bandAt, bandContent, dataIdOf, jumpOffset, lastAtOrAbove, oneLine, turnStatus, type Message, type Pin } from "./model.ts";
 
 test("bandContent: last message and last reply past the line, same line for both", () => {
@@ -103,10 +103,9 @@ test("indexOf: a failed turn marks only the reply; the question stays unmarked",
   assert.equal(messages.find((m) => m.title === "q1")?.status, undefined);
 });
 
-test("indexOf: counts user messages and skips agent-initiated ones", () => {
+test("indexOf: skips agent-initiated user messages", () => {
   const out = indexOf([user(1), reply(1), user(2, "from an agent", { initiator: "agent" }), user(3)], false);
-  assert.deepEqual(out.messages.filter((m) => m.role === "user").map((m) => [m.title, m.ordinal]), [["q1", 1], ["q3", 2]]);
-  assert.equal(out.userTotal, 2);
+  assert.deepEqual(out.messages.filter((m) => m.role === "user").map((m) => m.title), ["q1", "q3"]);
 });
 
 test("indexOf: an interrupted turn marks the reply, and a later reply clears it", () => {
@@ -175,4 +174,18 @@ test("rankOfRow: a row BB made up takes the rank of the nearest known row before
   assert.equal(rankOfRow(rows, 1, rank), 1, "a work-summary stands for the data row it names");
   assert.equal(rankOfRow(rows, 2, rank), 1, "an unknown row walks back to the one before it");
   assert.equal(rankOfRow(rows.slice(2), 0, rank), null, "nothing known at or above");
+});
+
+test("outlineOf: counts the messages the bar names, not another agent's or an empty one", () => {
+  const item = (id: string, preview: string, attachmentSummary: { count: number } | null = null) => ({ id, preview, attachmentSummary }) as Parameters<typeof outlineOf>[0][number];
+  const out = outlineOf([
+    item("u1", "first"),
+    item("u2", "[bb message from thread:thr_abc123] done"),
+    item("u3", "[bb system] @thread:thr_x finished"),
+    item("u4", ""),
+    item("u5", "", { count: 1 }),
+    item("u6", "[bb message from thread is just text"),
+  ]);
+  assert.deepEqual([...out.ordinals], [["u1", 1], ["u3", 2], ["u5", 3], ["u6", 4]]);
+  assert.equal(out.total, 4);
 });

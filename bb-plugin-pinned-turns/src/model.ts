@@ -79,8 +79,6 @@ export interface Message {
   by: "user" | "system";
   /** A reply's turn status, or "pending" on the user message whose turn is running; absent otherwise. */
   status?: TurnStatus;
-  /** A user row's place among the thread's user rows, counting from 1. */
-  ordinal?: number;
 }
 
 /** What a row contributes to its turn, in the terms `turnStatus` needs. */

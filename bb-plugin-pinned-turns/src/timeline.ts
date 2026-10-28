@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSdk } from "@get-bb/plugin-sdk/app";
-import { flatten, indexOf, mergeNewest, prependOlder, type Row, type TimelineIndex } from "./rows";
+import { flatten, indexOf, mergeNewest, outlineOf, prependOlder, type Outline, type Row, type TimelineIndex } from "./rows";
 
-export type { TimelineIndex };
+export type { Outline, TimelineIndex };
 
 /** Writes one line to the plugin log; a no-op unless the debug log is on. */
 export type Debug = (event: string, data: Record<string, number | string | boolean>) => void;
 
-const EMPTY: TimelineIndex = { rank: new Map(), messages: [], hasOlder: false, userTotal: 0 };
+const EMPTY: TimelineIndex = { rank: new Map(), messages: [], hasOlder: false };
 
 /** A burst of signals is refetched once it has been quiet this long... */
 const QUIET_MS = 300;
@@ -170,12 +170,6 @@ export function useTimeline(threadId: string, debug: Debug) {
   return { index, loadOlder };
 }
 
-/** Where each user message stands in the thread ("7" of "7/23"), by row id. */
-export interface Outline {
-  ordinals: ReadonlyMap<string, number>;
-  total: number;
-}
-
 /**
  * The thread's user messages in order, for the turn counter. BB's conversation
  * outline lists every one of them by the timeline's row id in one small response
@@ -195,7 +189,7 @@ export function useOutline(threadId: string, enabled: boolean, newestUser: strin
       try {
         const { items } = await sdk.threads.conversationOutline({ threadId, role: "user", signal: controller.signal });
         if (controller.signal.aborted) return;
-        setOutline({ ordinals: new Map(items.map((item, i) => [item.id, i + 1])), total: items.length });
+        setOutline(outlineOf(items));
       } catch {
         if (!controller.signal.aborted) timer = window.setTimeout(load, RETRY_MS);
       }

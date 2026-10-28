@@ -12,6 +12,18 @@ import "./src/styles.css";
 
 /** The longest a thread waits for an idle moment before its bar is mounted anyway. */
 const IDLE_WAIT_MS = 1500;
+/** Where there is no idle callback (Safari), how long after the thread's paint the bar waits instead. */
+const NO_IDLE_WAIT_MS = 200;
+
+/** Run `callback` once the page is idle, or after `IDLE_WAIT_MS` at the latest; returns a canceller. */
+function whenIdle(callback: () => void): () => void {
+  if (typeof requestIdleCallback === "function") {
+    const id = requestIdleCallback(callback, { timeout: IDLE_WAIT_MS });
+    return () => cancelIdleCallback(id);
+  }
+  const id = window.setTimeout(callback, NO_IDLE_WAIT_MS);
+  return () => window.clearTimeout(id);
+}
 
 /**
  * The thread whose bar may mount: `threadId` once the page has drawn it and gone
@@ -23,17 +35,17 @@ function useSettled(threadId: string | null): string | null {
   const [settled, setSettled] = useState<string | null>(null);
   useEffect(() => {
     if (threadId === null) return;
-    let idle = 0;
+    let idle = () => {};
     // Two frames: the first runs before the new thread's paint, the second after it.
     let frame = requestAnimationFrame(() => {
       frame = requestAnimationFrame(() => {
         frame = 0;
-        idle = requestIdleCallback(() => setSettled(threadId), { timeout: IDLE_WAIT_MS });
+        idle = whenIdle(() => setSettled(threadId));
       });
     });
     return () => {
       cancelAnimationFrame(frame);
-      cancelIdleCallback(idle);
+      idle();
     };
   }, [threadId]);
   return settled === threadId ? settled : null;
