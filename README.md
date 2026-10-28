@@ -21,7 +21,7 @@ Plugins for [BB](https://getbb.app), one folder each.
 
 ![The composer docked at the bottom of the right panel, under the Info tab](docs/screenshots/chat-dock-strip.png)
 
-![The dock button's menu](docs/screenshots/chat-dock-menu.png)
+![The Chat dock submenu in the thread's actions menu](docs/screenshots/chat-dock-menu.png)
 
 **Diff Plus**
 

@@ -38,7 +38,7 @@ export default async function plugin(bb: BbPluginApi) {
     showButton: {
       type: "boolean",
       label: "Show the dock button",
-      description: "The button in the composer's action row that opens the Chat Dock menu. Switch this back on here if you hid it.",
+      description: "The button in the composer's action row that switches docking on and off.",
       default: true,
     },
     debugLog: {

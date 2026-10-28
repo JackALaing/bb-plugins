@@ -18,16 +18,16 @@ Hiding the right panel (Ctrl+J) puts the composer back in the column in either m
 
 ## Settings
 
-Open the menu from the dock button in the composer's action row (beside the microphone), or use `bb plugin config chat-dock`. All are booleans:
+The dock button in the composer's action row (beside the microphone) switches `enabled`. Every option is in **Chat dock** in a thread's actions menu (⋯ in the thread header), or use `bb plugin config chat-dock`. All are booleans:
 
 | Key | Default | Effect |
 | --- | --- | --- |
 | `enabled` | on | Dock the composer in the right panel at all. |
 | `locked` | on | Dock as a strip at the panel's bottom; off, as a Chat tab. |
-| `showButton` | on | The dock button; switch it back on here or on the plugin's page in BB settings if you hid it from its menu. |
+| `showButton` | on | The dock button in the composer. |
 | `debugLog` | off | Dock and undock lines in the plugin log. |
 
-BB hides composer actions when the composer is in its compact one-line layout and on phone-width screens, so the button is absent there; use the settings page or `bb plugin config chat-dock` instead.
+BB hides composer actions when the composer is in its compact one-line layout and on phone-width screens, so the button is absent there; use the thread menu or `bb plugin config chat-dock` instead.
 
 ## Debugging
 

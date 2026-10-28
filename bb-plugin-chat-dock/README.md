@@ -4,13 +4,13 @@ A BB plugin. While a thread's right panel is open, it moves the composer, the ca
 
 ![The composer docked at the bottom of the right panel, under the Info tab](https://raw.githubusercontent.com/nfour/bb-plugins/master/docs/screenshots/chat-dock-strip.png)
 
-![The dock button's menu](https://raw.githubusercontent.com/nfour/bb-plugins/master/docs/screenshots/chat-dock-menu.png)
+![The Chat dock submenu in the thread's actions menu](https://raw.githubusercontent.com/nfour/bb-plugins/master/docs/screenshots/chat-dock-menu.png)
 
-Two ways to hold it, from the dock button in the composer's action row (beside the microphone):
+The dock button in the composer's action row (beside the microphone) switches docking on and off. The rest is in **Chat dock** in the thread's actions menu (⋯ in the thread header, or a sidebar row's menu), with a check beside each option that is on. Two ways to hold it:
 
 - **Keep it at the panel's bottom** (the default): a strip under whichever tab is open, so the composer never goes away while the panel is open. The open tab shrinks to make room; nothing is covered.
 - Switched off, it is a fixed **Chat** tab instead. The composer is in the panel while that tab is the active one in its pane, and back in the column otherwise. The tab takes part in the panel's own splitting and dragging.
 
-Switching between the two is a single move; the composer never passes through the chat column on the way, and the menu never expands the box. Hiding the right panel (Ctrl+J) returns the default layout either way, and opening another thread with the panel open swaps the docked composer for that thread's. On a phone-width screen, where the panel is a drawer over the page, the composer docks at the drawer's bottom the same way; BB hides composer actions there, so the dock button is absent and the options live on the plugin's settings page. Each option is also a plugin setting (`bb plugin config chat-dock`), with a **Debug log** (`bb plugin logs chat-dock`) and **Show this button** (switch it back on from the plugin's page in BB settings).
+Switching between the two is a single move; the composer never passes through the chat column on the way, and the dock button never expands the box. Hiding the right panel (Ctrl+J) returns the default layout either way, and opening another thread with the panel open swaps the docked composer for that thread's. On a phone-width screen, where the panel is a drawer over the page, the composer docks at the drawer's bottom the same way; BB hides composer actions there, so the dock button is absent; the thread menu still has the options. Each option is also a plugin setting (`bb plugin config chat-dock`), with a **Debug log** (`bb plugin logs chat-dock`) and **Dock button in the composer**.
 
 Nothing is re-implemented: BB's own elements are moved in the DOM and moved back, which is undocumented; the selectors are in `src/dom.ts` and the repo's `AGENTS.md`.

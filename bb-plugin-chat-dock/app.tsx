@@ -7,10 +7,10 @@
 import { definePluginApp } from "@get-bb/plugin-sdk/app";
 import { Dock } from "./src/Dock";
 import { DockButton } from "./src/DockButton";
-import { DockMenu } from "./src/DockMenu";
 import { DOCK_ICON, DockIcon } from "./src/icons";
 import { useOptions } from "./src/options";
 import { Strip } from "./src/Strip";
+import { threadMenu } from "./src/ThreadMenu";
 import "./src/styles.css";
 
 export default definePluginApp((app) => {
@@ -30,8 +30,7 @@ export default definePluginApp((app) => {
     },
   });
   app.slots.experimental_appOverlay({ id: "strip", component: Strip });
-  // The button is in the composer's own action row, so it is wherever the composer is;
-  // its menu is rendered from here, out of the composer's React tree (src/menu-state.ts).
-  app.slots.experimental_appOverlay({ id: "menu", component: DockMenu });
+  // The button is in the composer's own action row, so it is wherever the composer is.
   app.composer.customize({ id: "dock", scopes: ["thread"], actions: [{ id: "menu", component: DockButton }] });
+  app.slots.experimental_threadAction(threadMenu);
 });
