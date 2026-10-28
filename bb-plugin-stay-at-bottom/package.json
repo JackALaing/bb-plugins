@@ -1,0 +1,32 @@
+{
+  "name": "bb-plugin-stay-at-bottom",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "bb": ">=0.47",
+    "bbPluginSdk": ">=0.6.79"
+  },
+  "scripts": {
+    "build": "bb plugin build",
+    "dev": "bb plugin dev",
+    "check": "tsc --noEmit",
+    "test": "node --test src/keeper.test.ts"
+  },
+  "bb": {
+    "name": "Stay at bottom",
+    "description": "Keeps a streaming thread pinned to its bottom: puts the view back when the browser nudges it a few pixels up, leaves it alone when you scrolled.",
+    "branding": {
+      "icon": "ArrowDown"
+    },
+    "server": "./server.ts",
+    "app": "./app.tsx"
+  },
+  "devDependencies": {
+    "@get-bb/plugin-sdk": "0.6.79",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "typescript": "^5.7.0"
+  }
+}
