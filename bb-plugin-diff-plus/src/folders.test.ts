@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { ancestors, buildTree, initialOpen, scopeOf, selectedBy, statusOf, type ChangeKind, type TreeDir, type TreeFile } from "./folders.ts";
+import { ancestors, buildTree, filePattern, folderPattern, initialOpen, scopeOf, selectedBy, statusOf, type ChangeKind, type TreeDir, type TreeFile } from "./folders.ts";
 
 const file = (path: string, additions = 1, deletions = 0): TreeFile => ({ path, previousPath: null, additions, deletions, changeKind: "modified", untracked: false });
 const shape = (dir: TreeDir): unknown => ({
@@ -59,12 +59,32 @@ test("scopeOf reads the scope picker's label", () => {
   assert.deepEqual(scopeOf("deadbeefcafe"), { target: "commit", sha: "deadbeefcafe" });
 });
 
+test("folderPattern and filePattern escape glob characters", () => {
+  assert.equal(folderPattern("apps/docs"), "apps/docs/**");
+  assert.equal(folderPattern("app/[slug]"), "app/\\[slug\\]/**");
+  assert.equal(folderPattern("app/(marketing)"), "app/\\(marketing\\)/**");
+  assert.equal(folderPattern("a,b"), "a?b/**");
+  const files = [file("README.md"), file("docs/README.md"), file("src/a.ts"), file("app/[slug]/page.tsx")];
+  assert.equal(filePattern("src/a.ts", files), "src/a.ts");
+  // A plain filter matches anywhere in a path, so a path another file holds is written exactly.
+  assert.equal(filePattern("README.md", files), "README.md/**");
+  assert.equal(filePattern("docs/README.md", files), "docs/README.md");
+  assert.equal(filePattern("app/[slug]/page.tsx", files), "app/\\[slug\\]/page.tsx/**");
+  assert.equal(filePattern("old.ts", [file("old.ts"), { ...file("src/new.ts"), previousPath: "src/old.ts" }]), "old.ts/**");
+});
+
 test("selectedBy maps a filter back to a folder or a file", () => {
-  assert.deepEqual(selectedBy("apps/docs/**"), { kind: "dir", path: "apps/docs" });
-  assert.deepEqual(selectedBy("README.md"), { kind: "file", path: "README.md" });
-  assert.equal(selectedBy("*.md"), null);
-  assert.equal(selectedBy("!*.test.ts"), null);
-  assert.equal(selectedBy("  "), null);
+  const isFile = (path: string) => ["README.md", "app/[slug]/page.tsx"].includes(path);
+  assert.deepEqual(selectedBy("apps/docs/**", isFile), { kind: "dir", path: "apps/docs" });
+  assert.deepEqual(selectedBy("README.md", isFile), { kind: "file", path: "README.md" });
+  assert.deepEqual(selectedBy("README.md/**", isFile), { kind: "file", path: "README.md" });
+  assert.deepEqual(selectedBy(folderPattern("app/[slug]"), isFile), { kind: "dir", path: "app/[slug]" });
+  assert.deepEqual(selectedBy("app/\\[slug\\]/page.tsx/**", isFile), { kind: "file", path: "app/[slug]/page.tsx" });
+  assert.deepEqual(selectedBy("a?b/**", isFile), { kind: "dir", path: "a,b" });
+  assert.equal(selectedBy("*.md", isFile), null);
+  assert.equal(selectedBy("src/*/**", isFile), null);
+  assert.equal(selectedBy("!*.test.ts", isFile), null);
+  assert.equal(selectedBy("  ", isFile), null);
 });
 
 test("ancestors lists the folders that hold a path", () => {

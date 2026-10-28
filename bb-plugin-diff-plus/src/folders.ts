@@ -150,15 +150,63 @@ export function scopeOf(label: string): Scope | null {
   return sha ? { target: "commit", sha } : null;
 }
 
-/** The filter BB's file list takes for a folder (`docs/**`) or a file (its path). */
-export const folderPattern = (path: string) => `${path}/**`;
+// BB's filter splits its value at commas and runs picomatch on each part, except
+// that a part with no glob syntax matches anywhere in a path, ignoring case.
+
+/**
+ * `path` as a pattern that matches only itself: glob characters escaped, a `{` as
+ * `[{]` (picomatch's scan reads past an escaped one and calls the pattern plain),
+ * commas (BB splits at them) as `?`.
+ */
+const literal = (path: string) =>
+  path.replace(/[\\*?[\]}()!]/g, "\\$&").replaceAll("{", "[{]").replaceAll(",", "?");
+
+/** `literal` undone, or null when `pattern` holds glob syntax of its own. */
+function unliteral(pattern: string): string | null {
+  let path = "";
+  for (let i = 0; i < pattern.length; i++) {
+    const c = pattern[i];
+    if (c === "\\" && i + 1 < pattern.length) path += pattern[++i];
+    else if (pattern.startsWith("[{]", i)) {
+      path += "{";
+      i += 2;
+    } else if (c === "?") path += ",";
+    else if ("\\*[]{}()!".includes(c)) return null;
+    else path += c;
+  }
+  return path;
+}
+
+/** The filter for a folder: everything under it (`docs/**`). */
+export const folderPattern = (path: string) => `${literal(path)}/**`;
+
+/**
+ * The filter for one file. Its plain path reads best, but a plain filter also
+ * matches longer paths (`README.md` shows `docs/README.md` too), so when another
+ * changed file holds the path, or the path holds glob characters, it is written
+ * as `<path>/**`, which matches the path itself and nothing else.
+ */
+export function filePattern(path: string, files: readonly TreeFile[]): string {
+  if (literal(path) === path) {
+    const needle = path.toLowerCase();
+    const holds = (other: string | null) => !!other && other.toLowerCase().includes(needle);
+    if (!files.some((file) => file.path !== path && (holds(file.path) || holds(file.previousPath)))) return path;
+  }
+  return `${literal(path)}/**`;
+}
 
 /** The folder or file a filter value stands for, when it is one this tree wrote. */
-export function selectedBy(filter: string): { kind: "dir" | "file"; path: string } | null {
+export function selectedBy(
+  filter: string,
+  isFile: (path: string) => boolean,
+): { kind: "dir" | "file"; path: string } | null {
   const value = filter.trim();
   if (!value) return null;
-  if (value.endsWith("/**")) return { kind: "dir", path: value.slice(0, -3) };
-  return /[*?![\]{}]/.test(value) ? null : { kind: "file", path: value };
+  if (value.endsWith("/**")) {
+    const path = unliteral(value.slice(0, -3));
+    return path === null ? null : { kind: isFile(path) ? "file" : "dir", path };
+  }
+  return literal(value) === value ? { kind: "file", path: value } : null;
 }
 
 /** The folders to open so that `path` shows. */

@@ -103,7 +103,8 @@ for (const [name, id] of Object.entries(theme.folderNamesExpanded)) {
 const lightOf = new Map();
 for (const kind of ["fileNames", "fileExtensions", "languageIds", "folderNames", "folderNamesExpanded"]) {
   for (const [name, lightId] of Object.entries(theme.light?.[kind] ?? {})) {
-    const darkId = theme[kind][name];
+    const darkId = theme[kind]?.[name];
+    if (!darkId) continue;
     if (lightId !== darkId && (fileIds.has(darkId) || folderIds.has(darkId.replace(/_open$/, ""))) && svgOf(lightId)) lightOf.set(darkId, lightId);
   }
 }

@@ -59,6 +59,17 @@ div[data-diff-plus-tree="side"] > :not(.diff-plus-tree) > * {
 .diff-plus-toggle:focus-visible {
   outline: 1px solid var(--ring);
 }
+/* BB's toolbar buttons grow for touch on narrow screens (`max-md:pointer-coarse`). */
+@media (width < 48rem) and (pointer: coarse) {
+  .diff-plus-toggle {
+    width: 2.25rem;
+    height: 2.25rem;
+  }
+  .diff-plus-toggle .diff-plus-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+}
 
 .diff-plus-tree {
   position: relative;
@@ -66,6 +77,8 @@ div[data-diff-plus-tree="side"] > :not(.diff-plus-tree) > * {
   flex: none;
   flex-direction: column;
   width: var(--diff-plus-tree-width, clamp(11rem, 34%, 18rem));
+  /* A stored width is clamped when the tab opens; this keeps `LIST_ROOM` for the list when the panel narrows later. */
+  max-width: calc(100% - 15rem);
   border-right: 1px solid var(--border-seam);
   font-size: 0.75rem;
   line-height: 1rem;
@@ -81,6 +94,7 @@ div[data-diff-plus-tree="side"] > :not(.diff-plus-tree) > * {
 
 div[data-diff-plus-tree="stacked"] > .diff-plus-tree {
   width: auto;
+  max-width: none;
   height: 38%;
   min-height: 9rem;
   border-right: 0;

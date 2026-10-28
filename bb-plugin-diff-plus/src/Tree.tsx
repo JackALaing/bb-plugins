@@ -28,6 +28,7 @@ import {
   ancestors,
   buildTree,
   fileName,
+  filePattern,
   folderPattern,
   initialOpen,
   scopeOf,
@@ -484,7 +485,8 @@ function TreeColumn({ tab, label, filter, thread }: Omit<TabState, "tab"> & { ta
       }),
     [],
   );
-  const selected = selectedBy(filter);
+  const known = useMemo(() => new Set(files.status === "ready" ? files.files.map((file) => file.path) : []), [files]);
+  const selected = selectedBy(filter, (path) => known.has(path));
   const active = selected ? `${selected.kind}:${selected.path}` : null;
   const pick = useCallback(
     (kind: "dir" | "file", path: string) => {
@@ -501,13 +503,14 @@ function TreeColumn({ tab, label, filter, thread }: Omit<TabState, "tab"> & { ta
           return { ...previous, paths: next };
         });
       }
-      void setFilter(tab, kind === "dir" ? folderPattern(path) : path).then((done) => {
+      const pattern = kind === "dir" ? folderPattern(path) : filePattern(path, files.status === "ready" ? files.files : []);
+      void setFilter(tab, pattern).then((done) => {
         if (!done) return;
         scrollListToTop(tab);
         if (kind === "file") void expandFile(tab, path);
       });
     },
-    [active, tab, tree],
+    [active, tab, tree, files],
   );
 
   if (!scope) return <p className="diff-plus-tree-note">No folder tree for this view.</p>;
