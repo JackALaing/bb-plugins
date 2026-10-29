@@ -207,6 +207,7 @@ export function moveInto(shell: HTMLElement, host: HTMLElement): () => void {
   const marker = document.createComment("chat-dock: composer shell home");
   shell.parentNode?.insertBefore(marker, shell);
   host.appendChild(shell);
+  unstow(shell);
   return () => {
     if (marker.parentNode) marker.parentNode.insertBefore(shell, marker);
     else shell.remove();
@@ -220,6 +221,53 @@ export function moveInto(shell: HTMLElement, host: HTMLElement): () => void {
 /** Whether `host` still holds a composer shell (BB can rebuild the shell under a thread, leaving the host empty). */
 export function holdsShell(host: HTMLElement): boolean {
   return host.querySelector('[data-app-composer][data-app-composer-role="primary"]') !== null;
+}
+
+/*
+ * Keep-docked mode ("Keep composer docked"). A shell whose panel closes is put back
+ * in its column, as always, and then stowed there: concealed by a data attribute
+ * (`styles.css`), never unmounted, so the editor and its draft stay as they
+ * were. The Return row (`Return.tsx`) shows in its place. Docking it again is
+ * an ordinary `moveInto`, which unstows it, so it happens only where docking
+ * already happens: in an open panel.
+ */
+const STOWED = "chatDockStowed";
+const stowListeners = new Set<() => void>();
+
+function notifyStow() {
+  for (const listener of stowListeners) listener();
+}
+
+/** Hides a shell that is back in its column. A shell that went stale on the way back is left alone. */
+export function stow(shell: HTMLElement): void {
+  if (!shell.isConnected || STOWED in shell.dataset) return;
+  shell.dataset[STOWED] = "";
+  notifyStow();
+}
+
+/** Shows a stowed shell again. */
+export function unstow(shell: HTMLElement): void {
+  if (!(STOWED in shell.dataset)) return;
+  delete shell.dataset[STOWED];
+  notifyStow();
+}
+
+/** The stowed shells on the page. */
+export function stowedShells(): HTMLElement[] {
+  return [...document.querySelectorAll<HTMLElement>("[data-chat-dock-stowed]")];
+}
+
+/** Runs when a shell is stowed or unstowed. */
+export function onStowChange(listener: () => void): () => void {
+  stowListeners.add(listener);
+  return () => {
+    stowListeners.delete(listener);
+  };
+}
+
+/** The composer's editor in a shell: BB's TipTap box. */
+export function editorOf(shell: HTMLElement): HTMLElement | null {
+  return shell.querySelector<HTMLElement>('[contenteditable="true"][role="textbox"], textarea');
 }
 
 /** Whether a panel is the phone drawer rather than the split panel. */

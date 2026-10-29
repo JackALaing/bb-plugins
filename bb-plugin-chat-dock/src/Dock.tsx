@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useDebug } from "./debug";
-import { findPanel, findShell, holdsShell, isDrawer, moveInto, observePanel, onShellHome, overlayFor, panelHidden, park, type Overlay } from "./dom";
+import { findPanel, findShell, holdsShell, isDrawer, moveInto, observePanel, onShellHome, overlayFor, panelHidden, park, stow, type Overlay } from "./dom";
 import { useOptions } from "./options";
 
 /**
@@ -13,15 +13,19 @@ import { useOptions } from "./options";
 export function Dock({ threadId }: { threadId: string }) {
   const host = useRef<HTMLDivElement | null>(null);
   const log = useDebug();
-  const { locked } = useOptions();
+  const { locked, keepDocked } = useOptions();
   const lockedNow = useRef(locked);
   lockedNow.current = locked;
+  // Read when the panel closes, so switching it does not re-dock.
+  const keepDockedNow = useRef(keepDocked);
+  keepDockedNow.current = keepDocked;
 
   useEffect(() => {
     const slot = host.current;
     if (!slot || locked) return;
     const where = findPanel(slot);
     let restore: (() => void) | null = null;
+    let docked: HTMLElement | null = null;
     // In the phone drawer the shell sits in an overlay and the slot only keeps its place.
     let overlay: Overlay | null = null;
     const held = () => overlay?.host ?? slot;
@@ -32,7 +36,11 @@ export function Dock({ threadId }: { threadId: string }) {
       restore = null;
       overlay?.dispose();
       overlay = null;
-      log.current("undock", { from: "tab", reason });
+      // Kept docked: a closed panel keeps the composer docked, stowed in its column.
+      const stowed = reason === "panel closed" && keepDockedNow.current && docked !== null && holdsNothing(docked);
+      if (stowed) stow(docked!);
+      docked = null;
+      log.current("undock", { from: "tab", reason, stowed });
     };
     // Dock now, and keep docking: the shell can be rebuilt under a thread (a layout
     // change), which leaves the marker behind and a fresh shell in the column.
@@ -44,6 +52,7 @@ export function Dock({ threadId }: { threadId: string }) {
       if (!shell) return;
       if (where && isDrawer(where)) overlay = overlayFor(slot, where, "chat-dock-tab-host");
       restore = moveInto(shell, held());
+      docked = shell;
       log.current("dock", { to: "tab", height: shell.getBoundingClientRect().height });
     };
     check();
@@ -67,7 +76,8 @@ export function Dock({ threadId }: { threadId: string }) {
         log.current("undock", { from: "tab", reason: "parked for the strip" });
         return;
       }
-      undock("unmount");
+      // On a phone the drawer unmounts the tab as it closes: that is a close, not a tab switch.
+      undock(where && (!where.panel.isConnected || panelHidden(where)) ? "panel closed" : "unmount");
     };
   }, [threadId, locked, log]);
 
@@ -77,4 +87,9 @@ export function Dock({ threadId }: { threadId: string }) {
       <div ref={host} data-chat-dock-host="tab" className="chat-dock-tab-host" />
     </div>
   );
+}
+
+/** A shell back in a column rather than in a dock host. */
+function holdsNothing(shell: HTMLElement): boolean {
+  return shell.isConnected && !shell.closest("[data-chat-dock-host]");
 }

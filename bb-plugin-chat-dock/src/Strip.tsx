@@ -1,7 +1,7 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useBbContext } from "@get-bb/plugin-sdk/app";
 import { useDebug } from "./debug";
-import { adopt, createStripHost, findPanes, holdsShell, isDrawer, moveInto, observePage, onShellHome, overlayFor, panelHidden, type Overlay, type Panel } from "./dom";
+import { adopt, createStripHost, findPanes, holdsShell, isDrawer, moveInto, observePage, onShellHome, overlayFor, panelHidden, stow, type Overlay, type Panel } from "./dom";
 import { useOptions } from "./options";
 
 /**
@@ -20,7 +20,10 @@ import { useOptions } from "./options";
  */
 export function Strip() {
   const { threadId } = useBbContext();
-  const { ready, enabled, locked } = useOptions();
+  const { ready, enabled, locked, keepDocked } = useOptions();
+  // Read when the panel closes, so switching it does not re-dock.
+  const keepDockedNow = useRef(keepDocked);
+  keepDockedNow.current = keepDocked;
   const log = useDebug();
   const on = threadId !== null && ready && enabled && locked;
 
@@ -34,10 +37,14 @@ export function Strip() {
       const entry = held.get(root);
       if (!entry) return;
       held.delete(root);
+      const shell = (entry.overlay?.host ?? entry.host).querySelector<HTMLElement>("[data-app-composer]");
       entry.host.remove();
       entry.restore();
       entry.overlay?.dispose();
-      log.current("undock", { from: "strip", reason });
+      // Kept docked: a closed panel keeps the composer docked, stowed in its column.
+      const stowed = reason === "panel closed" && keepDockedNow.current && shell !== null;
+      if (stowed) stow(shell);
+      log.current("undock", { from: "strip", reason, stowed });
     };
     const hold = (root: HTMLElement, shell: HTMLElement, panel: Panel) => {
       const host = createStripHost();

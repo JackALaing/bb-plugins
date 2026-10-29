@@ -55,6 +55,66 @@
 }
 
 /*
+ * Keep-docked mode. A stowed shell stays mounted in its column, out of sight, and the
+ * Return row takes its place: the composer's footprint and radius, one line
+ * high. The tint and the primary-coloured dashed edge keep it reading as a
+ * control, not a disabled box, in both light and dark themes.
+ */
+[data-chat-dock-stowed] {
+  display: none !important;
+}
+.chat-dock-return {
+  display: flex;
+  width: 100%;
+  min-height: 2.75rem;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0 0.875rem;
+  border: 1px dashed color-mix(in srgb, var(--primary) 70%, transparent);
+  border-radius: 14px;
+  background-color: color-mix(in srgb, var(--primary) 8%, var(--background));
+  color: var(--foreground);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+@media (hover: hover) {
+  .chat-dock-return:hover {
+    border-style: solid;
+    background-color: color-mix(in srgb, var(--primary) 14%, var(--background));
+  }
+}
+.chat-dock-return:active {
+  background-color: color-mix(in srgb, var(--primary) 18%, var(--background));
+}
+.chat-dock-return:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+.chat-dock-return-icon {
+  width: 1.125rem;
+  height: 1.125rem;
+  flex-shrink: 0;
+  color: var(--primary);
+}
+.chat-dock-return-label {
+  flex-shrink: 0;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.chat-dock-return-draft {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  color: var(--muted-foreground);
+  font-size: 0.8125rem;
+  font-style: italic;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/*
  * BB collapses the composer's footer (environment, permission mode, context
  * meter) to opacity 0 when the composer is 30rem or narrower, or the pane 26rem
  * or shorter, until it is expanded. In the panel that is nearly always, so a
