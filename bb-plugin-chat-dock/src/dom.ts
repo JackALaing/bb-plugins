@@ -69,9 +69,32 @@ export function findPanel(from: Element): Panel | null {
 
 function panelOf(panel: HTMLElement, aside: HTMLElement | null): Panel | null {
   if (!aside) return null;
-  const strip = aside.querySelector("[data-testid=thread-secondary-panel-top-chrome]");
+  const strip = lowestStrip(aside);
   const column = strip ? columnOf(aside, strip) : aside.firstElementChild;
   return column instanceof HTMLElement ? { panel, aside, column } : null;
+}
+
+/**
+ * The tab strip of the panel's bottom tile. Split, the panel holds one tile per
+ * pane (`[data-split-pane-id]`, absolutely placed, in creation order rather than
+ * screen order), so the tile is picked by where it sits: lowest, then leftmost.
+ */
+function lowestStrip(aside: HTMLElement): Element | null {
+  const strips = aside.querySelectorAll("[data-testid=thread-secondary-panel-top-chrome]");
+  if (strips.length < 2) return strips[0] ?? null;
+  let best: Element | null = null;
+  let bottom = -Infinity;
+  let left = Infinity;
+  for (const strip of strips) {
+    const rect = (strip.closest("[data-split-pane-id]") ?? strip).getBoundingClientRect();
+    const lower = rect.bottom > bottom + 1;
+    if (lower || (rect.bottom > bottom - 1 && rect.left < left)) {
+      best = strip;
+      bottom = lower ? rect.bottom : Math.max(bottom, rect.bottom);
+      left = rect.left;
+    }
+  }
+  return best;
 }
 
 /** The lowest ancestor of the tab strip (the aside at most) that holds something beside it: the body. */
